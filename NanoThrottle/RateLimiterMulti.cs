@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace NanoThrottle
 {
-    public class RateLimiterManager<TK>
+    public class RateLimiterMulti<TK>
     {
         private readonly IDictionary<TK, IRateLimiter> _rateLimiters;
 
-        public RateLimiterManager(
+        public RateLimiterMulti(
             IEnumerable<KeyValuePair<TK, RateLimit>> rateLimits,
             IEqualityComparer<TK> comparer = null)
         {
