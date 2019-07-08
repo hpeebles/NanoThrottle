@@ -13,16 +13,16 @@ namespace NanoThrottle.Tests
         [InlineData(100)]
         public void TokensReplenishAtCorrectRate(int requestsPerSecond)
         {
-            var rateLimit = new RateLimit(requestsPerSecond, TimeSpan.FromSeconds(1), 1);
+            var rateLimit = new RateLimit(requestsPerSecond, TimeSpan.FromSeconds(1));
             
             var rateLimiter = new TokenBucketRateLimiter(rateLimit);
 
             var intervalForOneTokenToBeReplenished = TimeSpan.FromSeconds(1d / requestsPerSecond);
-            
-            rateLimiter.CanExecute().Should().BeTrue();
 
-            rateLimiter.CanExecute().Should().BeFalse();
-            
+            // Use up all the starting tokens
+            while (rateLimiter.CanExecute())
+            { }
+
             // Wait a little bit less than the expected time for a new token to be replenished
             Thread.Sleep(intervalForOneTokenToBeReplenished * 0.9);
 
@@ -40,13 +40,13 @@ namespace NanoThrottle.Tests
         [InlineData(1)]
         [InlineData(10)]
         [InlineData(100)]
-        public void MaxBurstIsAdheredTo(int maxBurst)
+        public void CountDeterminesTheMaxBurst(int count)
         {
-            var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1), maxBurst);
+            var rateLimit = new RateLimit(count, TimeSpan.MaxValue);
             
             var rateLimiter = new TokenBucketRateLimiter(rateLimit);
 
-            for (var i = 0; i < maxBurst; i++)
+            for (var i = 0; i < count; i++)
                 rateLimiter.CanExecute().Should().BeTrue();
 
             rateLimiter.CanExecute().Should().BeFalse();
@@ -58,7 +58,7 @@ namespace NanoThrottle.Tests
         [InlineData(100)]
         public void RequestingHigherCountUsesUpMoreTokens(int count)
         {
-            var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1), 1000);
+            var rateLimit = new RateLimit(1000, TimeSpan.MaxValue);
             
             var rateLimiter = new TokenBucketRateLimiter(rateLimit);
 

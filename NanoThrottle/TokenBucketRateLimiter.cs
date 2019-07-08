@@ -7,7 +7,7 @@ namespace NanoThrottle
     internal class TokenBucketRateLimiter : IRateLimiter
     {
         private readonly long _addTokenIntervalTicks;
-        private readonly int _maxBurst;
+        private readonly int _maxTokens;
         private long _lastUpdatedTicks;
         
         private volatile int _tokenCount;
@@ -16,7 +16,7 @@ namespace NanoThrottle
         public TokenBucketRateLimiter(RateLimit rateLimit)
         {
             _addTokenIntervalTicks = GetIntervalBetweenEachTokenRefresh(rateLimit);
-            _tokenCount = _maxBurst = rateLimit.MaxBurst;
+            _tokenCount = _maxTokens = rateLimit.Count;
             _lastUpdatedTicks = Stopwatch.GetTimestamp();
         }
 
@@ -55,8 +55,8 @@ namespace NanoThrottle
 
             var newTokenCount = Interlocked.Add(ref _tokenCount, tokensToAdd);
 
-            if (newTokenCount > _maxBurst)
-                _tokenCount = _maxBurst;
+            if (newTokenCount > _maxTokens)
+                _tokenCount = _maxTokens;
 
             var lastUpdatedIncrement = tokensToAdd * _addTokenIntervalTicks;
 
