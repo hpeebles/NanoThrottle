@@ -1,7 +1,7 @@
 namespace NanoThrottle
 {
-    public interface IRateLimiter
+    public interface IRateLimiter<in TK>
     {
-        bool CanExecute(int count = 1);
+        bool CanExecute(TK key, int count = 1);
     }
 }

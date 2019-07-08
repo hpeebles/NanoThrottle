@@ -5,7 +5,7 @@ using Xunit;
 
 namespace NanoThrottle.Tests
 {
-    public class TokenBucketRateLimiterTests
+    public class RateLimiterSingleTests
     {
         [Theory]
         [InlineData(1)]
@@ -15,7 +15,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(requestsPerSecond, TimeSpan.FromSeconds(1));
             
-            var rateLimiter = new TokenBucketRateLimiter(rateLimit);
+            var rateLimiter = new RateLimiterSingle(rateLimit);
 
             var intervalForOneTokenToBeReplenished = TimeSpan.FromSeconds(1d / requestsPerSecond);
 
@@ -24,12 +24,12 @@ namespace NanoThrottle.Tests
             { }
 
             // Wait a little bit less than the expected time for a new token to be replenished
-            Thread.Sleep(intervalForOneTokenToBeReplenished * 0.9);
+            Thread.Sleep(intervalForOneTokenToBeReplenished * 0.8);
 
             rateLimiter.CanExecute().Should().BeFalse();
             
             // Wait the remainder of the time, so that now a single token should be available
-            Thread.Sleep(intervalForOneTokenToBeReplenished * 0.1);
+            Thread.Sleep(intervalForOneTokenToBeReplenished * 0.2);
 
             rateLimiter.CanExecute().Should().BeTrue();
 
@@ -44,7 +44,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(count, TimeSpan.MaxValue);
             
-            var rateLimiter = new TokenBucketRateLimiter(rateLimit);
+            var rateLimiter = new RateLimiterSingle(rateLimit);
 
             for (var i = 0; i < count; i++)
                 rateLimiter.CanExecute().Should().BeTrue();
@@ -60,7 +60,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(1000, TimeSpan.MaxValue);
             
-            var rateLimiter = new TokenBucketRateLimiter(rateLimit);
+            var rateLimiter = new RateLimiterSingle(rateLimit);
 
             for (var i = 0; i < 1000 / count; i++)
                 rateLimiter.CanExecute(count).Should().BeTrue();

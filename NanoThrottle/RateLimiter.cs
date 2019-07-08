@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace NanoThrottle
 {
-    public class RateLimiterMulti<TK>
+    public class RateLimiter<TK> : IRateLimiter<TK>
     {
-        private readonly IDictionary<TK, IRateLimiter> _rateLimiters;
+        private readonly IDictionary<TK, IRateLimiterSingle> _rateLimiters;
 
-        public RateLimiterMulti(
+        public RateLimiter(
             IEnumerable<KeyValuePair<TK, RateLimit>> rateLimits,
             IEqualityComparer<TK> comparer = null)
         {
@@ -16,7 +16,7 @@ namespace NanoThrottle
             
             _rateLimiters = rateLimits.ToDictionary(
                 kv => kv.Key,
-                kv => (IRateLimiter)new TokenBucketRateLimiter(kv.Value),
+                kv => (IRateLimiterSingle)new RateLimiterSingle(kv.Value),
                 comparer);
         }
 

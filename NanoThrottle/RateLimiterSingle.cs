@@ -3,8 +3,9 @@ using System.Threading;
 
 namespace NanoThrottle
 {
+    // Uses token bucket algorithm
     // All timings are using Stopwatch ticks rather than DateTime ticks
-    internal class TokenBucketRateLimiter : IRateLimiter
+    public class RateLimiterSingle : IRateLimiterSingle
     {
         private readonly long _addTokenIntervalTicks;
         private readonly int _maxTokens;
@@ -13,7 +14,7 @@ namespace NanoThrottle
         private volatile int _tokenCount;
         private volatile int _isLocked;
 
-        public TokenBucketRateLimiter(RateLimit rateLimit)
+        public RateLimiterSingle(RateLimit rateLimit)
         {
             _addTokenIntervalTicks = GetIntervalBetweenEachTokenRefresh(rateLimit);
             _tokenCount = _maxTokens = rateLimit.Count;
