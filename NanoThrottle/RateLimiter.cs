@@ -9,16 +9,20 @@ namespace NanoThrottle
         private readonly IDictionary<TK, IRateLimiterSingle> _rateLimiters;
 
         public RateLimiter(
+            string name,
             IEnumerable<KeyValuePair<TK, RateLimit>> rateLimits,
             IEqualityComparer<TK> comparer = null)
         {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
             if (rateLimits == null) throw new ArgumentNullException(nameof(rateLimits));
             
             _rateLimiters = rateLimits.ToDictionary(
                 kv => kv.Key,
-                kv => (IRateLimiterSingle)new RateLimiterSingle(kv.Value),
+                kv => (IRateLimiterSingle)new RateLimiterSingle($"{name}_{kv.Key}", kv.Value),
                 comparer);
         }
+        
+        public string Name { get; }
 
         public bool CanExecute(TK key, int count = 1)
         {

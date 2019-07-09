@@ -2,8 +2,10 @@ namespace NanoThrottle
 {
     public interface IRateLimiterSingle
     {
-        bool CanExecute(int count = 1);
+        string Name { get; }
 
         RateLimit RateLimit { get; set; }
+        
+        bool CanExecute(int count = 1);
     }
 }

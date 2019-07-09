@@ -15,7 +15,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(requestsPerSecond, TimeSpan.FromSeconds(1));
             
-            var rateLimiter = new RateLimiterSingle(rateLimit);
+            var rateLimiter = new RateLimiterSingle("test", rateLimit);
 
             var intervalForOneTokenToBeReplenished = TimeSpan.FromSeconds(1d / requestsPerSecond);
 
@@ -44,7 +44,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(count, TimeSpan.MaxValue);
             
-            var rateLimiter = new RateLimiterSingle(rateLimit);
+            var rateLimiter = new RateLimiterSingle("test", rateLimit);
 
             for (var i = 0; i < count; i++)
                 rateLimiter.CanExecute().Should().BeTrue();
@@ -60,12 +60,24 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(1000, TimeSpan.MaxValue);
             
-            var rateLimiter = new RateLimiterSingle(rateLimit);
+            var rateLimiter = new RateLimiterSingle("test", rateLimit);
 
             for (var i = 0; i < 1000 / count; i++)
                 rateLimiter.CanExecute(count).Should().BeTrue();
 
             rateLimiter.CanExecute().Should().BeFalse();
+        }
+        
+        [Theory]
+        [InlineData("123")]
+        [InlineData("abc")]
+        public void NameSetCorrectly(string name)
+        {
+            var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
+            
+            var rateLimiter = new RateLimiterSingle(name, rateLimit);
+
+            rateLimiter.Name.Should().Be(name);
         }
 
         [Fact]
@@ -73,7 +85,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
             
-            var rateLimiter = new RateLimiterSingle(rateLimit);
+            var rateLimiter = new RateLimiterSingle("test", rateLimit);
 
             rateLimiter.RateLimit.Should().Be(rateLimit);
 
@@ -89,7 +101,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
             
-            var rateLimiter = new RateLimiterSingle(rateLimit);
+            var rateLimiter = new RateLimiterSingle("test", rateLimit);
 
             rateLimiter.CanExecute().Should().BeTrue();
 

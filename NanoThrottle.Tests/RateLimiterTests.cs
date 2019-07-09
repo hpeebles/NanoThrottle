@@ -7,10 +7,23 @@ namespace NanoThrottle.Tests
 {
     public class RateLimiterTests
     {
+        [Theory]
+        [InlineData("123")]
+        [InlineData("abc")]
+        public void NameSetCorrectly(string name)
+        {
+            var rateLimiter = new RateLimiter<int>(name, new[]
+            {
+                new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1)))
+            });
+
+            rateLimiter.Name.Should().Be(name);
+        }
+        
         [Fact]
         public void KeepsRateLimitersSeparate()
         {
-            var rateLimiter = new RateLimiter<int>(new[]
+            var rateLimiter = new RateLimiter<int>("test", new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1))),
                 new KeyValuePair<int, RateLimit>(2, new RateLimit(1, TimeSpan.FromSeconds(1)))
@@ -29,7 +42,7 @@ namespace NanoThrottle.Tests
         [InlineData(100)]
         public void RequestingHigherCountUsesUpMoreTokens(int count)
         {
-            var rateLimiter = new RateLimiter<int>(new[]
+            var rateLimiter = new RateLimiter<int>("test", new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, new RateLimit(1000, TimeSpan.MaxValue))
             });
@@ -43,7 +56,7 @@ namespace NanoThrottle.Tests
         [Fact]
         public void ThrowsIfKeyNotFound()
         {
-            var rateLimiter = new RateLimiter<int>(new[]
+            var rateLimiter = new RateLimiter<int>("test", new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1)))
             });
@@ -60,7 +73,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
             
-            var rateLimiter = new RateLimiter<int>(new[]
+            var rateLimiter = new RateLimiter<int>("test", new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, rateLimit)
             });
@@ -73,7 +86,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
             
-            var rateLimiter = new RateLimiter<int>(new[]
+            var rateLimiter = new RateLimiter<int>("test", new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, rateLimit)
             });

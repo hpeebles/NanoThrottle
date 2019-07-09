@@ -18,19 +18,15 @@ namespace NanoThrottle
 
         private readonly object _updateLock = new Object();
 
-        public RateLimiterSingle(RateLimit rateLimit)
+        public RateLimiterSingle(string name, RateLimit rateLimit)
         {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
             RateLimit = rateLimit;
             _tokenCount = rateLimit.Count;
             _lastUpdatedTicks = Stopwatch.GetTimestamp();
         }
-
-        public bool CanExecute(int count = 1)
-        {
-            UpdateTokens();
-            
-            return TryTakeTokens(count);
-        }
+        
+        public string Name { get; }
 
         public RateLimit RateLimit
         {
@@ -47,6 +43,13 @@ namespace NanoThrottle
                         _tokenCount = _maxTokens;
                 }
             }
+        }
+        
+        public bool CanExecute(int count = 1)
+        {
+            UpdateTokens();
+            
+            return TryTakeTokens(count);
         }
 
         private bool TryTakeTokens(int count)
