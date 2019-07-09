@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Threading;
 
@@ -7,17 +8,20 @@ namespace NanoThrottle
     // All timings are using Stopwatch ticks rather than DateTime ticks
     public class RateLimiterSingle : IRateLimiterSingle
     {
-        private readonly long _addTokenIntervalTicks;
-        private readonly int _maxTokens;
+        private RateLimit _rateLimit;
+        private long _addTokenIntervalTicks;
+        private int _maxTokens;
         private long _lastUpdatedTicks;
         
         private volatile int _tokenCount;
         private volatile int _isLocked;
 
+        private readonly object _updateLock = new Object();
+
         public RateLimiterSingle(RateLimit rateLimit)
         {
-            _addTokenIntervalTicks = GetIntervalBetweenEachTokenRefresh(rateLimit);
-            _tokenCount = _maxTokens = rateLimit.Count;
+            RateLimit = rateLimit;
+            _tokenCount = rateLimit.Count;
             _lastUpdatedTicks = Stopwatch.GetTimestamp();
         }
 
@@ -26,6 +30,23 @@ namespace NanoThrottle
             UpdateTokens();
             
             return TryTakeTokens(count);
+        }
+
+        public RateLimit RateLimit
+        {
+            get => _rateLimit;
+            set
+            {
+                lock (_updateLock)
+                {
+                    _rateLimit = value;
+                    _addTokenIntervalTicks = GetIntervalBetweenEachTokenRefresh(value);
+                    _maxTokens = value.Count;
+
+                    if (_tokenCount > _maxTokens)
+                        _tokenCount = _maxTokens;
+                }
+            }
         }
 
         private bool TryTakeTokens(int count)

@@ -67,5 +67,42 @@ namespace NanoThrottle.Tests
 
             rateLimiter.CanExecute().Should().BeFalse();
         }
+
+        [Fact]
+        public void CanSetRateLimit()
+        {
+            var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
+            
+            var rateLimiter = new RateLimiterSingle(rateLimit);
+
+            rateLimiter.RateLimit.Should().Be(rateLimit);
+
+            var newRateLimit = new RateLimit(2, TimeSpan.FromMinutes(1));
+            
+            rateLimiter.RateLimit = newRateLimit;
+
+            rateLimiter.RateLimit.Should().Be(newRateLimit);
+        }
+
+        [Fact]
+        public void NewRateLimitTakesEffectAfterUpdate()
+        {
+            var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
+            
+            var rateLimiter = new RateLimiterSingle(rateLimit);
+
+            rateLimiter.CanExecute().Should().BeTrue();
+
+            rateLimiter.CanExecute().Should().BeFalse();
+            
+            rateLimiter.RateLimit = new RateLimit(10, TimeSpan.FromSeconds(1));
+            
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+
+            for (var i = 0; i < 10; i++)
+                rateLimiter.CanExecute().Should().BeTrue();
+
+            rateLimiter.CanExecute().Should().BeFalse();
+        }
     }
 }

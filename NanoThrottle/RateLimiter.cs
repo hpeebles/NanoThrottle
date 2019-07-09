@@ -22,10 +22,24 @@ namespace NanoThrottle
 
         public bool CanExecute(TK key, int count = 1)
         {
-            if (!_rateLimiters.TryGetValue(key, out var rateLimiter))
-                throw new Exception($"No rate limit defined for key '{key}'");
+            return GetRateLimiterSingle(key).CanExecute(count);
+        }
 
-            return rateLimiter.CanExecute(count);
+        public RateLimit GetRateLimit(TK key)
+        {
+            return GetRateLimiterSingle(key).RateLimit;
+        }
+
+        public void SetRateLimit(TK key, RateLimit rateLimit)
+        {
+            GetRateLimiterSingle(key).RateLimit = rateLimit;
+        }
+
+        private IRateLimiterSingle GetRateLimiterSingle(TK key)
+        {
+            return _rateLimiters.TryGetValue(key, out var rateLimiter)
+                ? rateLimiter
+                : throw new Exception($"No rate limit defined for key '{key}'");
         }
     }
 }

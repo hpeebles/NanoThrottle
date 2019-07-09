@@ -54,5 +54,35 @@ namespace NanoThrottle.Tests
 
             func.Should().Throw<Exception>();
         }
+
+        [Fact]
+        public void CanGetRateLimit()
+        {
+            var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
+            
+            var rateLimiter = new RateLimiter<int>(new[]
+            {    
+                new KeyValuePair<int, RateLimit>(1, rateLimit)
+            });
+
+            rateLimiter.GetRateLimit(1).Should().Be(rateLimit);
+        }
+        
+        [Fact]
+        public void CanSetRateLimit()
+        {
+            var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
+            
+            var rateLimiter = new RateLimiter<int>(new[]
+            {    
+                new KeyValuePair<int, RateLimit>(1, rateLimit)
+            });
+
+            var newRateLimit = new RateLimit(2, TimeSpan.FromMinutes(1));
+            
+            rateLimiter.SetRateLimit(1, newRateLimit);
+
+            rateLimiter.GetRateLimit(1).Should().Be(newRateLimit);
+        }
     }
 }
