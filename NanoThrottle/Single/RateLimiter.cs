@@ -12,16 +12,23 @@ namespace NanoThrottle.Single
         private long _addTokenIntervalTicks;
         private int _maxTokens;
         private long _lastUpdatedTicks;
-        
+     
+        private readonly Action _onSuccess;
+        private readonly Action _onFailure;
+
         private volatile int _tokenCount;
         private volatile int _isLocked;
 
         private readonly object _updateLock = new Object();
 
-        internal RateLimiter(string name, RateLimit rateLimit)
+        internal RateLimiter(string name, RateLimit rateLimit, Action onSuccess = null, Action onFailure = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             RateLimit = rateLimit;
+
+            _onSuccess = onSuccess;
+            _onFailure = onFailure;
+
             _tokenCount = rateLimit.Count;
             _lastUpdatedTicks = Stopwatch.GetTimestamp();
         }
@@ -49,7 +56,14 @@ namespace NanoThrottle.Single
         {
             UpdateTokens();
             
-            return TryTakeTokens(count);
+            var success = TryTakeTokens(count);
+            
+            if (success)
+                _onSuccess?.Invoke();
+            else
+                _onFailure?.Invoke();
+
+            return success;
         }
 
         private bool TryTakeTokens(int count)

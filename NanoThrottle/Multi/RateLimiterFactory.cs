@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace NanoThrottle.Multi
@@ -27,6 +28,8 @@ namespace NanoThrottle.Multi
         private readonly string _name;
         private readonly IEnumerable<KeyValuePair<TK, RateLimit>> _rateLimits;
         private IEqualityComparer<TK> _comparer;
+        private Action<TK> _onSuccess;
+        private Action<TK> _onFailure;
 
         internal RateLimiterFactory(
             string name,
@@ -41,10 +44,22 @@ namespace NanoThrottle.Multi
             _comparer = comparer;
             return this;
         }
+
+        public RateLimiterFactory<TK> OnSuccess(Action<TK> onSuccess)
+        {
+            _onSuccess = onSuccess;
+            return this;
+        }
+
+        public RateLimiterFactory<TK> OnFailure(Action<TK> onFailure)
+        {
+            _onFailure = onFailure;
+            return this;
+        }
         
         public IRateLimiter<TK> Build()
         {
-            return new RateLimiter<TK>(_name, _rateLimits, _comparer);
+            return new RateLimiter<TK>(_name, _rateLimits, _comparer, _onSuccess, _onFailure);
         }
     }
 }

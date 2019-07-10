@@ -117,5 +117,41 @@ namespace NanoThrottle.Tests.Single
 
             rateLimiter.CanExecute().Should().BeFalse();
         }
+        
+        [Fact]
+        public void OnSuccessIsTriggeredCorrectly()
+        {
+            var successCount = 0;
+
+            Action onSuccess = () => successCount++;
+            
+            var rateLimiter = new RateLimiter("test", new RateLimit(1, TimeSpan.FromSeconds(1)), onSuccess);
+
+            rateLimiter.CanExecute().Should().BeTrue();
+
+            successCount.Should().Be(1);
+
+            rateLimiter.CanExecute().Should().BeFalse();
+            
+            successCount.Should().Be(1);
+        }
+
+        [Fact]
+        public void OnFailureIsTriggeredCorrectly()
+        {
+            var failureCount = 0;
+
+            Action onfailure = () => failureCount++;
+
+            var rateLimiter = new RateLimiter("test", new RateLimit(1, TimeSpan.FromSeconds(1)), onFailure: onfailure);
+
+            rateLimiter.CanExecute().Should().BeTrue();
+
+            failureCount.Should().Be(0);
+
+            rateLimiter.CanExecute().Should().BeFalse();
+
+            failureCount.Should().Be(1);
+        }
     }
 }

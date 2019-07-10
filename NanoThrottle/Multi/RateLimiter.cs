@@ -12,14 +12,20 @@ namespace NanoThrottle.Multi
         internal RateLimiter(
             string name,
             IEnumerable<KeyValuePair<TK, RateLimit>> rateLimits,
-            IEqualityComparer<TK> comparer = null)
+            IEqualityComparer<TK> comparer = null,
+            Action<TK> onSuccess = null,
+            Action<TK> onFailure = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             if (rateLimits == null) throw new ArgumentNullException(nameof(rateLimits));
             
             _rateLimiters = rateLimits.ToDictionary(
                 kv => kv.Key,
-                kv => (IRateLimiter)new RateLimiter($"{name}_{kv.Key}", kv.Value),
+                kv => (IRateLimiter)new RateLimiter(
+                    $"{name}_{kv.Key}",
+                    kv.Value,
+                    ConvertAction(onSuccess, kv.Key),
+                    ConvertAction(onFailure, kv.Key)),
                 comparer);
         }
         
@@ -45,6 +51,14 @@ namespace NanoThrottle.Multi
             return _rateLimiters.TryGetValue(key, out var rateLimiter)
                 ? rateLimiter
                 : throw new Exception($"No rate limit defined for key '{key}'");
+        }
+
+        private static Action ConvertAction(Action<TK> action, TK key)
+        {
+            if (action == null)
+                return null;
+
+            return () => action(key);
         }
     }
 }

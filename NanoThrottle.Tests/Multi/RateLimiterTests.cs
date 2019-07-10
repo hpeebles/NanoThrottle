@@ -98,5 +98,73 @@ namespace NanoThrottle.Tests.Multi
 
             rateLimiter.GetRateLimit(1).Should().Be(newRateLimit);
         }
+
+        [Fact]
+        public void OnSuccessIsTriggeredCorrectly()
+        {
+            var successList = new List<int>();
+
+            Action<int> onSuccess = successList.Add;
+            
+            var rateLimiter = new RateLimiter<int>("test", new[]
+            {    
+                new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1))),
+                new KeyValuePair<int, RateLimit>(2, new RateLimit(2, TimeSpan.FromSeconds(1)))
+            }, onSuccess: onSuccess);
+
+            rateLimiter.CanExecute(1).Should().BeTrue();
+
+            successList.Should().BeEquivalentTo(1);
+
+            rateLimiter.CanExecute(1).Should().BeFalse();
+
+            successList.Should().BeEquivalentTo(1);
+
+            rateLimiter.CanExecute(2).Should().BeTrue();
+
+            successList.Should().BeEquivalentTo(1, 2);
+
+            rateLimiter.CanExecute(2).Should().BeTrue();
+
+            successList.Should().BeEquivalentTo(1, 2, 2);
+            
+            rateLimiter.CanExecute(2).Should().BeFalse();
+
+            successList.Should().BeEquivalentTo(1, 2, 2);
+        }
+        
+        [Fact]
+        public void OnFailureIsTriggeredCorrectly()
+        {
+            var failureList = new List<int>();
+
+            Action<int> onFailure = failureList.Add;
+            
+            var rateLimiter = new RateLimiter<int>("test", new[]
+            {    
+                new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1))),
+                new KeyValuePair<int, RateLimit>(2, new RateLimit(2, TimeSpan.FromSeconds(1)))
+            }, onFailure: onFailure);
+
+            rateLimiter.CanExecute(1).Should().BeTrue();
+
+            failureList.Should().BeEmpty();
+
+            rateLimiter.CanExecute(1).Should().BeFalse();
+
+            failureList.Should().BeEquivalentTo(1);
+
+            rateLimiter.CanExecute(2).Should().BeTrue();
+
+            failureList.Should().BeEquivalentTo(1);
+
+            rateLimiter.CanExecute(2).Should().BeTrue();
+
+            failureList.Should().BeEquivalentTo(1);
+            
+            rateLimiter.CanExecute(2).Should().BeFalse();
+
+            failureList.Should().BeEquivalentTo(1, 2);
+        }
     }
 }
