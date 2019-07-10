@@ -1,17 +1,18 @@
 using System;
 using FluentAssertions;
+using NanoThrottle.Single;
 using Xunit;
 
-namespace NanoThrottle.Tests
+namespace NanoThrottle.Tests.Single
 {
-    public class RateLimiterSingleFactoryTests
+    public class RateLimiterFactoryTests
     {
         [Fact]
         public void NameIsSetCorrectly()
         {
             var name = Guid.NewGuid().ToString();
 
-            var rateLimiter = RateLimiterSingleFactory
+            var rateLimiter = RateLimiterFactory
                 .Create(name)
                 .WithRateLimit(new RateLimit(1, TimeSpan.FromSeconds(1)))
                 .Build();
@@ -24,7 +25,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
 
-            var rateLimiter = RateLimiterSingleFactory
+            var rateLimiter = RateLimiterFactory
                 .Create("test")
                 .WithRateLimit(rateLimit)
                 .Build();

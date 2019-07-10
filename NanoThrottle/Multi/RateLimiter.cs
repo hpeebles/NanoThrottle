@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NanoThrottle.Single;
 
-namespace NanoThrottle
+namespace NanoThrottle.Multi
 {
     public class RateLimiter<TK> : IRateLimiter<TK>
     {
-        private readonly IDictionary<TK, IRateLimiterSingle> _rateLimiters;
+        private readonly IDictionary<TK, IRateLimiter> _rateLimiters;
 
         internal RateLimiter(
             string name,
@@ -18,7 +19,7 @@ namespace NanoThrottle
             
             _rateLimiters = rateLimits.ToDictionary(
                 kv => kv.Key,
-                kv => (IRateLimiterSingle)new RateLimiterSingle($"{name}_{kv.Key}", kv.Value),
+                kv => (IRateLimiter)new RateLimiter($"{name}_{kv.Key}", kv.Value),
                 comparer);
         }
         
@@ -39,7 +40,7 @@ namespace NanoThrottle
             GetRateLimiterSingle(key).RateLimit = rateLimit;
         }
 
-        private IRateLimiterSingle GetRateLimiterSingle(TK key)
+        private IRateLimiter GetRateLimiterSingle(TK key)
         {
             return _rateLimiters.TryGetValue(key, out var rateLimiter)
                 ? rateLimiter

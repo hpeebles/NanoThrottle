@@ -1,11 +1,12 @@
 using System;
 using System.Threading;
 using FluentAssertions;
+using NanoThrottle.Single;
 using Xunit;
 
-namespace NanoThrottle.Tests
+namespace NanoThrottle.Tests.Single
 {
-    public class RateLimiterSingleTests
+    public class RateLimiterTests
     {
         [Theory]
         [InlineData(1)]
@@ -15,7 +16,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(requestsPerSecond, TimeSpan.FromSeconds(1));
             
-            var rateLimiter = new RateLimiterSingle("test", rateLimit);
+            var rateLimiter = new RateLimiter("test", rateLimit);
 
             var intervalForOneTokenToBeReplenished = TimeSpan.FromSeconds(1d / requestsPerSecond);
 
@@ -44,7 +45,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(count, TimeSpan.MaxValue);
             
-            var rateLimiter = new RateLimiterSingle("test", rateLimit);
+            var rateLimiter = new RateLimiter("test", rateLimit);
 
             for (var i = 0; i < count; i++)
                 rateLimiter.CanExecute().Should().BeTrue();
@@ -60,7 +61,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(1000, TimeSpan.MaxValue);
             
-            var rateLimiter = new RateLimiterSingle("test", rateLimit);
+            var rateLimiter = new RateLimiter("test", rateLimit);
 
             for (var i = 0; i < 1000 / count; i++)
                 rateLimiter.CanExecute(count).Should().BeTrue();
@@ -75,7 +76,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
             
-            var rateLimiter = new RateLimiterSingle(name, rateLimit);
+            var rateLimiter = new RateLimiter(name, rateLimit);
 
             rateLimiter.Name.Should().Be(name);
         }
@@ -85,7 +86,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
             
-            var rateLimiter = new RateLimiterSingle("test", rateLimit);
+            var rateLimiter = new RateLimiter("test", rateLimit);
 
             rateLimiter.RateLimit.Should().Be(rateLimit);
 
@@ -101,7 +102,7 @@ namespace NanoThrottle.Tests
         {
             var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
             
-            var rateLimiter = new RateLimiterSingle("test", rateLimit);
+            var rateLimiter = new RateLimiter("test", rateLimit);
 
             rateLimiter.CanExecute().Should().BeTrue();
 

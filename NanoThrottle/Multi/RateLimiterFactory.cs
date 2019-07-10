@@ -1,7 +1,6 @@
-using System;
 using System.Collections.Generic;
 
-namespace NanoThrottle
+namespace NanoThrottle.Multi
 {
     public class RateLimiterFactory
     {
@@ -39,10 +38,7 @@ namespace NanoThrottle
 
         public RateLimiterFactory<TK> WithKeyComparer(IEqualityComparer<TK> comparer)
         {
-            if (_comparer != null)
-                throw new Exception("Key comparer has already been configured");
-
-            _comparer = comparer ?? EqualityComparer<TK>.Default;
+            _comparer = comparer;
             return this;
         }
         

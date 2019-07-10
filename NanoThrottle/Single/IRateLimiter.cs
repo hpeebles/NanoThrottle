@@ -1,6 +1,6 @@
-namespace NanoThrottle
+namespace NanoThrottle.Single
 {
-    public interface IRateLimiterSingle
+    public interface IRateLimiter
     {
         string Name { get; }
 

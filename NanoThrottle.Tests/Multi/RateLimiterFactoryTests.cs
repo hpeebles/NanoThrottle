@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using Moq;
+using NanoThrottle.Multi;
 using Xunit;
 
-namespace NanoThrottle.Tests
+namespace NanoThrottle.Tests.Multi
 {
     public class RateLimiterFactoryTests
     {

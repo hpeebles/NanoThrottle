@@ -2,11 +2,11 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 
-namespace NanoThrottle
+namespace NanoThrottle.Single
 {
     // Uses token bucket algorithm
     // All timings are using Stopwatch ticks rather than DateTime ticks
-    public class RateLimiterSingle : IRateLimiterSingle
+    public class RateLimiter : IRateLimiter
     {
         private RateLimit _rateLimit;
         private long _addTokenIntervalTicks;
@@ -18,7 +18,7 @@ namespace NanoThrottle
 
         private readonly object _updateLock = new Object();
 
-        internal RateLimiterSingle(string name, RateLimit rateLimit)
+        internal RateLimiter(string name, RateLimit rateLimit)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             RateLimit = rateLimit;

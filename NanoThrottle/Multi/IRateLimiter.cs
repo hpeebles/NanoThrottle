@@ -1,4 +1,4 @@
-namespace NanoThrottle
+namespace NanoThrottle.Multi
 {
     public interface IRateLimiter<in TK>
     {
