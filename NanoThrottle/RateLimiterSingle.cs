@@ -18,7 +18,7 @@ namespace NanoThrottle
 
         private readonly object _updateLock = new Object();
 
-        public RateLimiterSingle(string name, RateLimit rateLimit)
+        internal RateLimiterSingle(string name, RateLimit rateLimit)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             RateLimit = rateLimit;

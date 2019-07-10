@@ -8,7 +8,7 @@ namespace NanoThrottle
     {
         private readonly IDictionary<TK, IRateLimiterSingle> _rateLimiters;
 
-        public RateLimiter(
+        internal RateLimiter(
             string name,
             IEnumerable<KeyValuePair<TK, RateLimit>> rateLimits,
             IEqualityComparer<TK> comparer = null)
