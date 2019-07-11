@@ -8,6 +8,7 @@ namespace NanoThrottle.Single
         private RateLimit _rateLimit;
         private Action _onSuccess;
         private Action _onFailure;
+        private Action<RateLimiter> _onBuild;
 
         private RateLimiterFactory(string name)
         {
@@ -27,13 +28,19 @@ namespace NanoThrottle.Single
 
         public RateLimiterFactory OnSuccess(Action onSuccess)
         {
-            _onSuccess = onSuccess;
+            _onSuccess += onSuccess;
             return this;
         }
 
         public RateLimiterFactory OnFailure(Action onFailure)
         {
-            _onFailure = onFailure;
+            _onFailure += onFailure;
+            return this;
+        }
+
+        public RateLimiterFactory OnBuild(Action<RateLimiter> onBuild)
+        {
+            _onBuild += onBuild;
             return this;
         }
 
