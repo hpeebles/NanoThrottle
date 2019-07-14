@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using NanoThrottle.Single;
 using Xunit;
@@ -67,6 +68,27 @@ namespace NanoThrottle.Tests.Single
             rateLimiter.CanExecute().Should().BeFalse();
 
             failureCount.Should().Be(1);
+        }
+
+        [Fact]
+        public void OnRateLimitChangedIsSetCorrectly()
+        {
+            var rateLimitChanges = new List<RateLimitChangedNotification>();
+
+            Action<RateLimitChangedNotification> onRateLimitChanged = rateLimitChanges.Add;
+            
+            var rateLimit1 = new RateLimit(1, TimeSpan.FromSeconds(1));
+            var rateLimit2 = new RateLimit(2, TimeSpan.FromMinutes(1));
+
+            var rateLimiter = RateLimiterFactory
+                .Create("test")
+                .WithRateLimit(rateLimit1)
+                .OnRateLimitChanged(onRateLimitChanged)
+                .Build();
+
+            rateLimiter.RateLimit = rateLimit2;
+
+            rateLimitChanges.Should().HaveCount(1);
         }
     }
 }

@@ -15,19 +15,26 @@ namespace NanoThrottle.Single
      
         private readonly Action _onSuccess;
         private readonly Action _onFailure;
+        private readonly Action<RateLimitChangedNotification> _onRateLimitChanged;
 
         private volatile int _tokenCount;
         private volatile int _isLocked;
 
         private readonly object _updateLock = new Object();
 
-        internal RateLimiter(string name, RateLimit rateLimit, Action onSuccess = null, Action onFailure = null)
+        internal RateLimiter(
+            string name,
+            RateLimit rateLimit,
+            Action onSuccess = null,
+            Action onFailure = null,
+            Action<RateLimitChangedNotification> onRateLimitChanged = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             RateLimit = rateLimit;
 
             _onSuccess = onSuccess;
             _onFailure = onFailure;
+            _onRateLimitChanged = onRateLimitChanged;
 
             _tokenCount = rateLimit.Count;
             _lastUpdatedTicks = Stopwatch.GetTimestamp();
@@ -42,12 +49,19 @@ namespace NanoThrottle.Single
             {
                 lock (_updateLock)
                 {
+                    if (_rateLimit == value)
+                        return;
+
+                    var old = _rateLimit;
+                    
                     _rateLimit = value;
                     _addTokenIntervalTicks = GetIntervalBetweenEachTokenRefresh(value);
                     _maxTokens = value.Count;
 
                     if (_tokenCount > _maxTokens)
                         _tokenCount = _maxTokens;
+
+                    _onRateLimitChanged?.Invoke(new RateLimitChangedNotification(old, value));
                 }
             }
         }

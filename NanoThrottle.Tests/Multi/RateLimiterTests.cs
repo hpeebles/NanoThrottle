@@ -166,5 +166,36 @@ namespace NanoThrottle.Tests.Multi
 
             failureList.Should().BeEquivalentTo(1, 2);
         }
+        
+        [Fact]
+        public void OnRateLimitChangedIsTriggeredCorrectly()
+        {
+            var rateLimitChanges = new List<RateLimitChangedNotification<int>>();
+
+            Action<RateLimitChangedNotification<int>> onRateLimitChanged = rateLimitChanges.Add;
+            
+            var rateLimit1 = new RateLimit(1, TimeSpan.FromSeconds(1));
+            var rateLimit2 = new RateLimit(2, TimeSpan.FromMinutes(1));
+            
+            var rateLimiter = new RateLimiter<int>("test", new[]
+            {    
+                new KeyValuePair<int, RateLimit>(1, rateLimit1),
+                new KeyValuePair<int, RateLimit>(2, rateLimit2)
+            }, onRateLimitChanged: onRateLimitChanged);
+
+            rateLimiter.SetRateLimit(1, rateLimit1);
+
+            rateLimitChanges.Should().BeEmpty();
+            
+            rateLimiter.SetRateLimit(1, rateLimit2);
+
+            rateLimitChanges.Should().ContainSingle()
+                .And.BeEquivalentTo(new RateLimitChangedNotification<int>(1, rateLimit1, rateLimit2));
+            
+            rateLimiter.SetRateLimit(2, rateLimit1);
+
+            rateLimitChanges.Should().HaveCount(2)
+                .And.HaveElementAt(1, new RateLimitChangedNotification<int>(2, rateLimit2, rateLimit1));
+        }
     }
 }

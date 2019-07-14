@@ -14,7 +14,8 @@ namespace NanoThrottle.Multi
             IEnumerable<KeyValuePair<TK, RateLimit>> rateLimits,
             IEqualityComparer<TK> comparer = null,
             Action<TK> onSuccess = null,
-            Action<TK> onFailure = null)
+            Action<TK> onFailure = null,
+            Action<RateLimitChangedNotification<TK>> onRateLimitChanged = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             if (rateLimits == null) throw new ArgumentNullException(nameof(rateLimits));
@@ -25,7 +26,8 @@ namespace NanoThrottle.Multi
                     $"{name}_{kv.Key}",
                     kv.Value,
                     ConvertAction(onSuccess, kv.Key),
-                    ConvertAction(onFailure, kv.Key)),
+                    ConvertAction(onFailure, kv.Key),
+                    ConvertAction(onRateLimitChanged, kv.Key)),
                 comparer);
         }
         
@@ -59,6 +61,15 @@ namespace NanoThrottle.Multi
                 return null;
 
             return () => action(key);
+        }
+        
+        private static Action<RateLimitChangedNotification> ConvertAction(
+            Action<RateLimitChangedNotification<TK>> action, TK key)
+        {
+            if (action == null)
+                return null;
+
+            return r => action(new RateLimitChangedNotification<TK>(key, r.OldRateLimit, r.NewRateLimit));
         }
     }
 }

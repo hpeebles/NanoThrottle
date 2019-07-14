@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using FluentAssertions;
 using NanoThrottle.Single;
@@ -152,6 +153,33 @@ namespace NanoThrottle.Tests.Single
             rateLimiter.CanExecute().Should().BeFalse();
 
             failureCount.Should().Be(1);
+        }
+        
+        [Fact]
+        public void OnRateLimitChangedIsTriggeredCorrectly()
+        {
+            var rateLimitChanges = new List<RateLimitChangedNotification>();
+
+            Action<RateLimitChangedNotification> onRateLimitChanged = rateLimitChanges.Add;
+            
+            var rateLimit1 = new RateLimit(1, TimeSpan.FromSeconds(1));
+            var rateLimit2 = new RateLimit(2, TimeSpan.FromMinutes(1));
+            
+            var rateLimiter = new RateLimiter("test", rateLimit1, onRateLimitChanged: onRateLimitChanged);
+
+            rateLimiter.RateLimit = rateLimit1;
+
+            rateLimitChanges.Should().BeEmpty();
+            
+            rateLimiter.RateLimit = rateLimit2;
+
+            rateLimitChanges.Should().ContainSingle()
+                .And.BeEquivalentTo(new RateLimitChangedNotification(rateLimit1, rateLimit2));
+            
+            rateLimiter.RateLimit = rateLimit1;
+
+            rateLimitChanges.Should().HaveCount(2)
+                .And.HaveElementAt(1, new RateLimitChangedNotification(rateLimit2, rateLimit1));
         }
     }
 }

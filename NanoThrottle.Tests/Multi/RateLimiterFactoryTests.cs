@@ -107,5 +107,31 @@ namespace NanoThrottle.Tests.Multi
 
             failureList.Should().BeEquivalentTo(1);
         }
+        
+        [Fact]
+        public void OnRateLimitChangedIsSetCorrectly()
+        {
+            var rateLimitChanges = new List<RateLimitChangedNotification<int>>();
+
+            Action<RateLimitChangedNotification<int>> onRateLimitChanged = rateLimitChanges.Add;
+            
+            var rateLimit1 = new RateLimit(1, TimeSpan.FromSeconds(1));
+            var rateLimit2 = new RateLimit(2, TimeSpan.FromMinutes(1));
+
+            var rateLimiter = RateLimiterFactory
+                .Create("test")
+                .WithRateLimits(new[]
+                {
+                    new KeyValuePair<int, RateLimit>(1, rateLimit1)
+                })
+                .OnRateLimitChanged(onRateLimitChanged)
+                .Build();
+
+            rateLimiter.SetRateLimit(1, rateLimit2);
+
+            rateLimitChanges.Should().HaveCount(1)
+                .And.BeEquivalentTo(new RateLimitChangedNotification<int>(1, rateLimit1, rateLimit2));
+        }
+        
     }
 }

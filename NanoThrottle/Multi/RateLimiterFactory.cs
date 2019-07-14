@@ -30,6 +30,7 @@ namespace NanoThrottle.Multi
         private IEqualityComparer<TK> _comparer;
         private Action<TK> _onSuccess;
         private Action<TK> _onFailure;
+        private Action<RateLimitChangedNotification<TK>> _onRateLimitChanged;
         private Action<RateLimiter<TK>> _onBuild;
 
         internal RateLimiterFactory(
@@ -58,6 +59,12 @@ namespace NanoThrottle.Multi
             return this;
         }
 
+        public RateLimiterFactory<TK> OnRateLimitChanged(Action<RateLimitChangedNotification<TK>> onRateLimitChanged)
+        {
+            _onRateLimitChanged = onRateLimitChanged;
+            return this;
+        }
+
         public RateLimiterFactory<TK> OnBuild(Action<RateLimiter<TK>> onBuild)
         {
             _onBuild += onBuild;
@@ -66,7 +73,13 @@ namespace NanoThrottle.Multi
         
         public IRateLimiter<TK> Build()
         {
-            var rateLimiter = new RateLimiter<TK>(_name, _rateLimits, _comparer, _onSuccess, _onFailure);
+            var rateLimiter = new RateLimiter<TK>(
+                _name,
+                _rateLimits,
+                _comparer,
+                _onSuccess,
+                _onFailure,
+                _onRateLimitChanged);
             
             _onBuild?.Invoke(rateLimiter);
 
