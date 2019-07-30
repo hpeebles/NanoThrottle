@@ -89,13 +89,13 @@ namespace NanoThrottle.Tests.Single
             
             var rateLimiter = new RateLimiter("test", rateLimit);
 
-            rateLimiter.RateLimit.Should().Be(rateLimit);
+            rateLimiter.GetRateLimit().Should().Be(rateLimit);
 
             var newRateLimit = new RateLimit(2, TimeSpan.FromMinutes(1));
             
-            rateLimiter.RateLimit = newRateLimit;
+            rateLimiter.SetRateLimit(newRateLimit);
 
-            rateLimiter.RateLimit.Should().Be(newRateLimit);
+            rateLimiter.GetRateLimit().Should().Be(newRateLimit);
         }
 
         [Fact]
@@ -109,7 +109,7 @@ namespace NanoThrottle.Tests.Single
 
             rateLimiter.CanExecute().Should().BeFalse();
             
-            rateLimiter.RateLimit = new RateLimit(10, TimeSpan.FromSeconds(1));
+            rateLimiter.SetRateLimit(new RateLimit(10, TimeSpan.FromSeconds(1)));
             
             Thread.Sleep(TimeSpan.FromSeconds(1));
 
@@ -126,7 +126,7 @@ namespace NanoThrottle.Tests.Single
 
             Action onSuccess = () => successCount++;
             
-            var rateLimiter = new RateLimiter("test", new RateLimit(1, TimeSpan.FromSeconds(1)), onSuccess);
+            var rateLimiter = new RateLimiter("test", new RateLimit(1, TimeSpan.FromSeconds(1)), onSuccess: onSuccess);
 
             rateLimiter.CanExecute().Should().BeTrue();
 
@@ -167,19 +167,64 @@ namespace NanoThrottle.Tests.Single
             
             var rateLimiter = new RateLimiter("test", rateLimit1, onRateLimitChanged: onRateLimitChanged);
 
-            rateLimiter.RateLimit = rateLimit1;
+            rateLimiter.SetRateLimit(rateLimit1);
 
             rateLimitChanges.Should().BeEmpty();
             
-            rateLimiter.RateLimit = rateLimit2;
+            rateLimiter.SetRateLimit(rateLimit2);
 
-            rateLimitChanges.Should().ContainSingle()
-                .And.BeEquivalentTo(new RateLimitChangedNotification(rateLimit1, rateLimit2));
+            var expected1 = new RateLimitChangedNotification(
+                rateLimit1.AsLocal(1),
+                rateLimit2.AsLocal(1),
+                rateLimit1,
+                rateLimit2);
             
-            rateLimiter.RateLimit = rateLimit1;
+            rateLimitChanges.Should().ContainSingle()
+                .And.BeEquivalentTo(expected1);
+            
+            rateLimiter.SetRateLimit(rateLimit1);
 
+            var expected2 = new RateLimitChangedNotification(
+                rateLimit2.AsLocal(1),
+                rateLimit1.AsLocal(1),
+                rateLimit2,
+                rateLimit1);
+            
             rateLimitChanges.Should().HaveCount(2)
-                .And.HaveElementAt(1, new RateLimitChangedNotification(rateLimit2, rateLimit1));
+                .And.HaveElementAt(1, expected2);
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        public void SettingInstanceCountAffectsLocalRateLimit(int instanceCount)
+        {
+            var rateLimit = new RateLimit(10, TimeSpan.FromSeconds(1));
+            
+            var rateLimiter = new RateLimiter("test", rateLimit, instanceCount);
+
+            rateLimiter.GetRateLimit().Should().Be(rateLimit);
+            
+            var localRateLimit = new RateLimit(10 / instanceCount, TimeSpan.FromSeconds(1), RateLimitType.Local);
+            
+            rateLimiter.GetRateLimit(RateLimitType.Local).Should().Be(localRateLimit);
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        public void LocalRateLimitTakesEffectLocally(int instanceCount)
+        {
+            var globalRateLimit = new RateLimit(100, TimeSpan.FromHours(1));
+            
+            var rateLimiter = new RateLimiter("test", globalRateLimit, instanceCount);
+
+            for (var i = 0; i < 100 / instanceCount; i++)
+                rateLimiter.CanExecute().Should().BeTrue();
+
+            rateLimiter.CanExecute().Should().BeFalse();
         }
     }
 }

@@ -8,7 +8,9 @@ namespace NanoThrottle.Single
     // All timings are using Stopwatch ticks rather than DateTime ticks
     public class RateLimiter : IRateLimiter
     {
-        private RateLimit _rateLimit;
+        private RateLimit _localRateLimit;
+        private RateLimit _globalRateLimit;
+        private int _instanceCount;
         private long _addTokenIntervalTicks;
         private int _maxTokens;
         private long _lastUpdatedTicks;
@@ -20,52 +22,87 @@ namespace NanoThrottle.Single
         private volatile int _tokenCount;
         private volatile int _isLocked;
 
-        private readonly object _updateLock = new Object();
+        private readonly object _updateSettingsLock = new Object();
 
         internal RateLimiter(
             string name,
             RateLimit rateLimit,
+            int instanceCount = 1,
             Action onSuccess = null,
             Action onFailure = null,
             Action<RateLimitChangedNotification> onRateLimitChanged = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            RateLimit = rateLimit;
+            InstanceCount = instanceCount;
+            _localRateLimit = rateLimit.AsLocal(instanceCount);
+            _globalRateLimit = rateLimit.AsGlobal(instanceCount);
+            _addTokenIntervalTicks = GetIntervalBetweenEachTokenRefresh(_localRateLimit);
+            _maxTokens = _localRateLimit.Count;
+            _tokenCount = _localRateLimit.Count;
+            _lastUpdatedTicks = Stopwatch.GetTimestamp();
 
             _onSuccess = onSuccess;
             _onFailure = onFailure;
             _onRateLimitChanged = onRateLimitChanged;
-
-            _tokenCount = rateLimit.Count;
-            _lastUpdatedTicks = Stopwatch.GetTimestamp();
         }
         
         public string Name { get; }
 
-        public RateLimit RateLimit
+        public RateLimit GetRateLimit(RateLimitType type = RateLimitType.Global)
         {
-            get => _rateLimit;
-            set
+            return type == RateLimitType.Local
+                ? _localRateLimit
+                : _globalRateLimit;
+        }
+
+        public void SetRateLimit(RateLimit rateLimit)
+        {
+            lock (_updateSettingsLock)
             {
-                lock (_updateLock)
+                var newLocalRateLimit = rateLimit.AsLocal(InstanceCount);
+                var newGlobalRateLimit = rateLimit.AsGlobal(InstanceCount);
+                
+                if (_localRateLimit == newLocalRateLimit && _globalRateLimit == newGlobalRateLimit)
+                    return;
+
+                _addTokenIntervalTicks = GetIntervalBetweenEachTokenRefresh(newLocalRateLimit);
+                _maxTokens = newLocalRateLimit.Count;
+
+                if (_tokenCount > _maxTokens)
+                    _tokenCount = _maxTokens;
+
+                var oldLocalRateLimit = _localRateLimit;
+                var oldGlobalRateLimit = _globalRateLimit;
+
+                _localRateLimit = newLocalRateLimit;
+                _globalRateLimit = newGlobalRateLimit;
+                
+                if (_onRateLimitChanged != null)
                 {
-                    if (_rateLimit == value)
-                        return;
+                    var notification = new RateLimitChangedNotification(
+                        oldLocalRateLimit,
+                        newLocalRateLimit,
+                        oldGlobalRateLimit,
+                        newGlobalRateLimit);
 
-                    var old = _rateLimit;
-                    
-                    _rateLimit = value;
-                    _addTokenIntervalTicks = GetIntervalBetweenEachTokenRefresh(value);
-                    _maxTokens = value.Count;
-
-                    if (_tokenCount > _maxTokens)
-                        _tokenCount = _maxTokens;
-
-                    _onRateLimitChanged?.Invoke(new RateLimitChangedNotification(old, value));
+                    _onRateLimitChanged(notification);
                 }
             }
         }
         
+        public int InstanceCount
+        {
+            get => _instanceCount;
+            set
+            {
+                if (value <= 0)
+                    throw new ArgumentOutOfRangeException(nameof(InstanceCount));
+                
+                lock (_updateSettingsLock)
+                    _instanceCount = value;
+            }
+        }
+
         public bool CanExecute(int count = 1)
         {
             UpdateTokens();

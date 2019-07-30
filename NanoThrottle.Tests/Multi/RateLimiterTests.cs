@@ -98,6 +98,35 @@ namespace NanoThrottle.Tests.Multi
 
             rateLimiter.GetRateLimit(1).Should().Be(newRateLimit);
         }
+        
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        public void CanGetInstanceCount(int instanceCount)
+        {
+            var rateLimiter = new RateLimiter<int>("test", new[]
+            {    
+                new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1)))
+            }, instanceCount);
+
+            rateLimiter.InstanceCount.Should().Be(instanceCount);
+        }
+        
+        [Fact]
+        public void CanSetInstanceCount()
+        {
+            var rateLimiter = new RateLimiter<int>("test", new[]
+            {    
+                new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1)))
+            });
+
+            for (var count = 1; count < 10; count++)
+            {
+                rateLimiter.InstanceCount = count;
+                rateLimiter.InstanceCount.Should().Be(count);
+            }
+        }
 
         [Fact]
         public void OnSuccessIsTriggeredCorrectly()
@@ -189,13 +218,27 @@ namespace NanoThrottle.Tests.Multi
             
             rateLimiter.SetRateLimit(1, rateLimit2);
 
+            var expected1 = new RateLimitChangedNotification<int>(
+                1,
+                rateLimit1.AsLocal(1),
+                rateLimit2.AsLocal(1),
+                rateLimit1,
+                rateLimit2);
+            
             rateLimitChanges.Should().ContainSingle()
-                .And.BeEquivalentTo(new RateLimitChangedNotification<int>(1, rateLimit1, rateLimit2));
+                .And.BeEquivalentTo(expected1);
             
             rateLimiter.SetRateLimit(2, rateLimit1);
 
+            var expected2 = new RateLimitChangedNotification<int>(
+                2,
+                rateLimit2.AsLocal(1),
+                rateLimit1.AsLocal(1),
+                rateLimit2,
+                rateLimit1);
+            
             rateLimitChanges.Should().HaveCount(2)
-                .And.HaveElementAt(1, new RateLimitChangedNotification<int>(2, rateLimit2, rateLimit1));
+                .And.HaveElementAt(1, expected2);
         }
     }
 }

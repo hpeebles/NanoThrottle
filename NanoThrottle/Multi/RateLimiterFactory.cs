@@ -27,6 +27,7 @@ namespace NanoThrottle.Multi
     {
         private readonly string _name;
         private readonly IEnumerable<KeyValuePair<TK, RateLimit>> _rateLimits;
+        private int _instanceCount = 1;
         private IEqualityComparer<TK> _comparer;
         private Action<TK> _onSuccess;
         private Action<TK> _onFailure;
@@ -39,6 +40,15 @@ namespace NanoThrottle.Multi
         {
             _name = name;
             _rateLimits = rateLimits;
+        }
+
+        public RateLimiterFactory<TK> WithInstanceCount(int instanceCount)
+        {
+            if (instanceCount <= 0)
+                throw new ArgumentOutOfRangeException(nameof(instanceCount));
+            
+            _instanceCount = instanceCount;
+            return this;
         }
 
         public RateLimiterFactory<TK> WithKeyComparer(IEqualityComparer<TK> comparer)
@@ -76,6 +86,7 @@ namespace NanoThrottle.Multi
             var rateLimiter = new RateLimiter<TK>(
                 _name,
                 _rateLimits,
+                _instanceCount,
                 _comparer,
                 _onSuccess,
                 _onFailure,

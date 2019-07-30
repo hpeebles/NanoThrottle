@@ -8,10 +8,13 @@ namespace NanoThrottle.Multi
     public class RateLimiter<TK> : IRateLimiter<TK>
     {
         private readonly IDictionary<TK, IRateLimiter> _rateLimiters;
+        private readonly object _updateSettingsLock = new Object();
+        private int _instanceCount;
 
         internal RateLimiter(
             string name,
             IEnumerable<KeyValuePair<TK, RateLimit>> rateLimits,
+            int instanceCount = 1,
             IEqualityComparer<TK> comparer = null,
             Action<TK> onSuccess = null,
             Action<TK> onFailure = null,
@@ -25,10 +28,13 @@ namespace NanoThrottle.Multi
                 kv => (IRateLimiter)new RateLimiter(
                     $"{name}_{kv.Key}",
                     kv.Value,
+                    instanceCount,
                     ConvertAction(onSuccess, kv.Key),
                     ConvertAction(onFailure, kv.Key),
                     ConvertAction(onRateLimitChanged, kv.Key)),
                 comparer);
+            
+            _instanceCount = instanceCount;
         }
         
         public string Name { get; }
@@ -38,14 +44,29 @@ namespace NanoThrottle.Multi
             return GetRateLimiterSingle(key).CanExecute(count);
         }
 
-        public RateLimit GetRateLimit(TK key)
+        public RateLimit GetRateLimit(TK key, RateLimitType type = RateLimitType.Global)
         {
-            return GetRateLimiterSingle(key).RateLimit;
+            return GetRateLimiterSingle(key).GetRateLimit(type);
         }
 
         public void SetRateLimit(TK key, RateLimit rateLimit)
         {
-            GetRateLimiterSingle(key).RateLimit = rateLimit;
+            GetRateLimiterSingle(key).SetRateLimit(rateLimit);
+        }
+
+        public int InstanceCount
+        {
+            get => _instanceCount;
+            set
+            {
+                lock (_updateSettingsLock)
+                {
+                    foreach (var rateLimiter in _rateLimiters.Values)
+                        rateLimiter.InstanceCount = value;
+                    
+                    _instanceCount = value;
+                }
+            }
         }
 
         private IRateLimiter GetRateLimiterSingle(TK key)
@@ -69,7 +90,17 @@ namespace NanoThrottle.Multi
             if (action == null)
                 return null;
 
-            return r => action(new RateLimitChangedNotification<TK>(key, r.OldRateLimit, r.NewRateLimit));
+            return r =>
+            {
+                var notification = new RateLimitChangedNotification<TK>(
+                    key,
+                    r.OldLocalRateLimit,
+                    r.NewLocalRateLimit,
+                    r.OldGlobalRateLimit,
+                    r.NewGlobalRateLimit);
+
+                action(notification);
+            };
         }
     }
 }

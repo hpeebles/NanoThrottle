@@ -1,4 +1,5 @@
 using System;
+using System.Reactive.Linq;
 
 namespace NanoThrottle.Single
 {
@@ -12,7 +13,10 @@ namespace NanoThrottle.Single
 
             void Subscribe(IRateLimiter rateLimiter)
             {
-                rateLimitUpdates.Subscribe(r => rateLimiter.RateLimit = r);
+                rateLimitUpdates
+                    .Do(rateLimiter.SetRateLimit)
+                    .Retry()
+                    .Subscribe();
             }
         }
     }

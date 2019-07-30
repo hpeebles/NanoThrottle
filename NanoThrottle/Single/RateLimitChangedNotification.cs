@@ -2,13 +2,21 @@ namespace NanoThrottle.Single
 {
     public readonly struct RateLimitChangedNotification
     {
-        public RateLimitChangedNotification(RateLimit oldRateLimit, RateLimit newRateLimit)
+        public RateLimitChangedNotification(
+            RateLimit oldLocalRateLimit,
+            RateLimit newLocalRateLimit,
+            RateLimit oldGlobalRateLimit,
+            RateLimit newGlobalRateLimit)
         {
-            OldRateLimit = oldRateLimit;
-            NewRateLimit = newRateLimit;
+            OldLocalRateLimit = oldLocalRateLimit;
+            NewLocalRateLimit = newLocalRateLimit;
+            OldGlobalRateLimit = oldGlobalRateLimit;
+            NewGlobalRateLimit = newGlobalRateLimit;
         }
         
-        public RateLimit OldRateLimit { get; }
-        public RateLimit NewRateLimit { get; }
+        public RateLimit OldLocalRateLimit { get; }
+        public RateLimit NewLocalRateLimit { get; }
+        public RateLimit OldGlobalRateLimit { get; }
+        public RateLimit NewGlobalRateLimit { get; }
     }
 }

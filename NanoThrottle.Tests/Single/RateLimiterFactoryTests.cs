@@ -31,7 +31,22 @@ namespace NanoThrottle.Tests.Single
                 .WithRateLimit(rateLimit)
                 .Build();
             
-            rateLimiter.RateLimit.Should().Be(rateLimit);
+            rateLimiter.GetRateLimit().Should().Be(rateLimit);
+        }
+        
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        public void InstanceCountIsSetCorrectly(int instanceCount)
+        {
+            var rateLimiter = RateLimiterFactory
+                .Create("test")
+                .WithRateLimit(new RateLimit(1, TimeSpan.FromSeconds(1)))
+                .WithInstanceCount(instanceCount)
+                .Build();
+
+            rateLimiter.InstanceCount.Should().Be(instanceCount);
         }
 
         [Fact]
@@ -86,7 +101,7 @@ namespace NanoThrottle.Tests.Single
                 .OnRateLimitChanged(onRateLimitChanged)
                 .Build();
 
-            rateLimiter.RateLimit = rateLimit2;
+            rateLimiter.SetRateLimit(rateLimit2);
 
             rateLimitChanges.Should().HaveCount(1);
         }

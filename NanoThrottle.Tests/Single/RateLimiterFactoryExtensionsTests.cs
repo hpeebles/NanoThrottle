@@ -25,7 +25,7 @@ namespace NanoThrottle.Tests.Single
                 
                 updates.OnNext(rateLimit);
 
-                rateLimiter.RateLimit.Should().Be(rateLimit);
+                rateLimiter.GetRateLimit().Should().Be(rateLimit);
             }
         }
     }

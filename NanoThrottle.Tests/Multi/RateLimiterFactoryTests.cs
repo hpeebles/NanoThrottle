@@ -41,6 +41,26 @@ namespace NanoThrottle.Tests.Multi
             rateLimiter.GetRateLimit(1).Should().Be(rateLimit);
         }
 
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(10)]
+        public void InstanceCountIsSetCorrectly(int instanceCount)
+        {
+            var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
+
+            var rateLimiter = RateLimiterFactory
+                .Create("test")
+                .WithRateLimits(new[]
+                {
+                    new KeyValuePair<int, RateLimit>(1, rateLimit)
+                })
+                .WithInstanceCount(instanceCount)
+                .Build();
+
+            rateLimiter.InstanceCount.Should().Be(instanceCount);
+        }
+
         [Fact]
         public void KeyComparerIsSetCorrectly()
         {
@@ -129,9 +149,15 @@ namespace NanoThrottle.Tests.Multi
 
             rateLimiter.SetRateLimit(1, rateLimit2);
 
+            var expected = new RateLimitChangedNotification<int>(
+                1,
+                rateLimit1.AsLocal(1),
+                rateLimit2.AsLocal(1),
+                rateLimit1,
+                rateLimit2);
+            
             rateLimitChanges.Should().HaveCount(1)
-                .And.BeEquivalentTo(new RateLimitChangedNotification<int>(1, rateLimit1, rateLimit2));
+                .And.BeEquivalentTo(expected);
         }
-        
     }
 }

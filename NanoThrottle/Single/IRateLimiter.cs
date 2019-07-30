@@ -4,7 +4,11 @@ namespace NanoThrottle.Single
     {
         string Name { get; }
 
-        RateLimit RateLimit { get; set; }
+        RateLimit GetRateLimit(RateLimitType type = RateLimitType.Global);
+
+        void SetRateLimit(RateLimit rateLimit);
+        
+        int InstanceCount { get; set; }
         
         bool CanExecute(int count = 1);
     }

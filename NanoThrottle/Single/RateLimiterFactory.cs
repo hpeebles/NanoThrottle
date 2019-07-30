@@ -6,6 +6,7 @@ namespace NanoThrottle.Single
     {
         private readonly string _name;
         private RateLimit _rateLimit;
+        private int _instanceCount = 1;
         private Action _onSuccess;
         private Action _onFailure;
         private Action<RateLimitChangedNotification> _onRateLimitChanged;
@@ -24,6 +25,15 @@ namespace NanoThrottle.Single
         public RateLimiterFactory WithRateLimit(RateLimit rateLimit)
         {
             _rateLimit = rateLimit;
+            return this;
+        }
+        
+        public RateLimiterFactory WithInstanceCount(int instanceCount)
+        {
+            if (instanceCount <= 0)
+                throw new ArgumentOutOfRangeException(nameof(instanceCount));
+            
+            _instanceCount = instanceCount;
             return this;
         }
 
@@ -56,6 +66,7 @@ namespace NanoThrottle.Single
             var rateLimiter = new RateLimiter(
                 _name,
                 _rateLimit,
+                _instanceCount,
                 _onSuccess,
                 _onFailure,
                 _onRateLimitChanged);
