@@ -20,7 +20,7 @@ namespace NanoThrottle.Single
         private readonly Action<RateLimitChangedNotification> _onRateLimitChanged;
 
         private volatile int _tokenCount;
-        private volatile int _isLocked;
+        private volatile int _updateTokenCountLock;
 
         private readonly object _updateSettingsLock = new Object();
 
@@ -33,7 +33,7 @@ namespace NanoThrottle.Single
             Action<RateLimitChangedNotification> onRateLimitChanged = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            InstanceCount = instanceCount;
+            _instanceCount = instanceCount;
             _localRateLimit = rateLimit.AsLocal(instanceCount);
             _globalRateLimit = rateLimit.AsGlobal(instanceCount);
             _addTokenIntervalTicks = GetIntervalBetweenEachTokenRefresh(_localRateLimit);
@@ -58,36 +58,7 @@ namespace NanoThrottle.Single
         public void SetRateLimit(RateLimit rateLimit)
         {
             lock (_updateSettingsLock)
-            {
-                var newLocalRateLimit = rateLimit.AsLocal(InstanceCount);
-                var newGlobalRateLimit = rateLimit.AsGlobal(InstanceCount);
-                
-                if (_localRateLimit == newLocalRateLimit && _globalRateLimit == newGlobalRateLimit)
-                    return;
-
-                _addTokenIntervalTicks = GetIntervalBetweenEachTokenRefresh(newLocalRateLimit);
-                _maxTokens = newLocalRateLimit.Count;
-
-                if (_tokenCount > _maxTokens)
-                    _tokenCount = _maxTokens;
-
-                var oldLocalRateLimit = _localRateLimit;
-                var oldGlobalRateLimit = _globalRateLimit;
-
-                _localRateLimit = newLocalRateLimit;
-                _globalRateLimit = newGlobalRateLimit;
-                
-                if (_onRateLimitChanged != null)
-                {
-                    var notification = new RateLimitChangedNotification(
-                        oldLocalRateLimit,
-                        newLocalRateLimit,
-                        oldGlobalRateLimit,
-                        newGlobalRateLimit);
-
-                    _onRateLimitChanged(notification);
-                }
-            }
+                SetRateLimitWithinLock(rateLimit);
         }
         
         public int InstanceCount
@@ -97,9 +68,14 @@ namespace NanoThrottle.Single
             {
                 if (value <= 0)
                     throw new ArgumentOutOfRangeException(nameof(InstanceCount));
-                
+
                 lock (_updateSettingsLock)
+                {
                     _instanceCount = value;
+
+                    // Update the rate limit so that it picks up the new instance count
+                    SetRateLimitWithinLock(_globalRateLimit);
+                }
             }
         }
 
@@ -138,7 +114,7 @@ namespace NanoThrottle.Single
                 return;
 
             // Mutex to ensure tokens are only updated by a single thread
-            if (Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0)
+            if (Interlocked.CompareExchange(ref _updateTokenCountLock, 1, 0) != 0)
                 return;
 
             var tokensToAdd = (int)((now - lastUpdated) / _addTokenIntervalTicks);
@@ -152,7 +128,39 @@ namespace NanoThrottle.Single
 
             Interlocked.Add(ref _lastUpdatedTicks, lastUpdatedIncrement);
 
-            _isLocked = 0;
+            _updateTokenCountLock = 0;
+        }
+
+        private void SetRateLimitWithinLock(RateLimit rateLimit)
+        {
+            var newLocalRateLimit = rateLimit.AsLocal(InstanceCount);
+            var newGlobalRateLimit = rateLimit.AsGlobal(InstanceCount);
+                
+            if (_localRateLimit == newLocalRateLimit && _globalRateLimit == newGlobalRateLimit)
+                return;
+
+            _addTokenIntervalTicks = GetIntervalBetweenEachTokenRefresh(newLocalRateLimit);
+            _maxTokens = newLocalRateLimit.Count;
+
+            if (_tokenCount > _maxTokens)
+                _tokenCount = _maxTokens;
+
+            var oldLocalRateLimit = _localRateLimit;
+            var oldGlobalRateLimit = _globalRateLimit;
+
+            _localRateLimit = newLocalRateLimit;
+            _globalRateLimit = newGlobalRateLimit;
+                
+            if (_onRateLimitChanged != null)
+            {
+                var notification = new RateLimitChangedNotification(
+                    oldLocalRateLimit,
+                    newLocalRateLimit,
+                    oldGlobalRateLimit,
+                    newGlobalRateLimit);
+
+                _onRateLimitChanged(notification);
+            }
         }
 
         private static long GetIntervalBetweenEachTokenRefresh(RateLimit rateLimit)

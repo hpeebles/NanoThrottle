@@ -226,5 +226,29 @@ namespace NanoThrottle.Tests.Single
 
             rateLimiter.CanExecute().Should().BeFalse();
         }
+
+        [Fact]
+        public void UpdatingInstanceCountUpdatesLocalRateLimit()
+        {
+            var globalRateLimit = new RateLimit(100, TimeSpan.FromSeconds(1));
+            
+            var rateLimiter = new RateLimiter("test", globalRateLimit);
+
+            rateLimiter.GetRateLimit().Should().Be(globalRateLimit);
+            rateLimiter.GetRateLimit(RateLimitType.Local).Should().Be(
+                new RateLimit(100, TimeSpan.FromSeconds(1), RateLimitType.Local));
+
+            rateLimiter.InstanceCount = 2;
+
+            rateLimiter.GetRateLimit().Should().Be(globalRateLimit);
+            rateLimiter.GetRateLimit(RateLimitType.Local).Should().Be(
+                new RateLimit(50, TimeSpan.FromSeconds(1), RateLimitType.Local));
+
+            rateLimiter.InstanceCount = 10;
+            
+            rateLimiter.GetRateLimit().Should().Be(globalRateLimit);
+            rateLimiter.GetRateLimit(RateLimitType.Local).Should().Be(
+                new RateLimit(10, TimeSpan.FromSeconds(1), RateLimitType.Local));
+        }
     }
 }
