@@ -240,5 +240,35 @@ namespace NanoThrottle.Tests.Multi
             rateLimitChanges.Should().HaveCount(2)
                 .And.HaveElementAt(1, expected2);
         }
+        
+        [Fact]
+        public void OnInstanceCountChangedIsTriggeredCorrectly()
+        {
+            var instanceCountChanges = new List<InstanceCountChangedNotification>();
+
+            Action<InstanceCountChangedNotification> onInstanceCountChanged = instanceCountChanges.Add;
+
+            var rateLimiter = new RateLimiter<int>("test", new[]
+            {
+                new KeyValuePair<int, RateLimit>(1, new RateLimit(10, TimeSpan.FromSeconds(1)))
+            }, onInstanceCountChanged: onInstanceCountChanged);
+            
+            for (var i = 1; i < 10; i++)
+            {
+                rateLimiter.InstanceCount = i;
+
+                if (i == 1)
+                {
+                    instanceCountChanges.Should().BeEmpty();
+                }
+                else
+                {
+                    var expected = new InstanceCountChangedNotification(i - 1, i);
+
+                    instanceCountChanges.Should().HaveCount(i - 1)
+                        .And.HaveElementAt(i - 2, expected);
+                }
+            }
+        }
     }
 }

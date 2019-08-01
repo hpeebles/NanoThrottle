@@ -10,6 +10,7 @@ namespace NanoThrottle.Single
         private Action _onSuccess;
         private Action _onFailure;
         private Action<RateLimitChangedNotification> _onRateLimitChanged;
+        private Action<InstanceCountChangedNotification> _onInstanceCountChanged;
         private Action<RateLimiter> _onBuild;
 
         private RateLimiterFactory(string name)
@@ -54,6 +55,12 @@ namespace NanoThrottle.Single
             _onRateLimitChanged += onRateLimitChanged;
             return this;
         }
+        
+        public RateLimiterFactory OnInstanceCountChanged(Action<InstanceCountChangedNotification> onInstanceCountChanged)
+        {
+            _onInstanceCountChanged += onInstanceCountChanged;
+            return this;
+        }
 
         public RateLimiterFactory OnBuild(Action<RateLimiter> onBuild)
         {
@@ -69,7 +76,8 @@ namespace NanoThrottle.Single
                 _instanceCount,
                 _onSuccess,
                 _onFailure,
-                _onRateLimitChanged);
+                _onRateLimitChanged,
+                _onInstanceCountChanged);
             
             _onBuild?.Invoke(rateLimiter);
 

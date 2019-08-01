@@ -18,6 +18,7 @@ namespace NanoThrottle.Single
         private readonly Action _onSuccess;
         private readonly Action _onFailure;
         private readonly Action<RateLimitChangedNotification> _onRateLimitChanged;
+        private readonly Action<InstanceCountChangedNotification> _onInstanceCountChanged;
 
         private volatile int _tokenCount;
         private volatile int _updateTokenCountLock;
@@ -30,7 +31,8 @@ namespace NanoThrottle.Single
             int instanceCount = 1,
             Action onSuccess = null,
             Action onFailure = null,
-            Action<RateLimitChangedNotification> onRateLimitChanged = null)
+            Action<RateLimitChangedNotification> onRateLimitChanged = null,
+            Action<InstanceCountChangedNotification> onInstanceCountChanged = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             _instanceCount = instanceCount;
@@ -44,6 +46,7 @@ namespace NanoThrottle.Single
             _onSuccess = onSuccess;
             _onFailure = onFailure;
             _onRateLimitChanged = onRateLimitChanged;
+            _onInstanceCountChanged = onInstanceCountChanged;
         }
         
         public string Name { get; }
@@ -68,13 +71,20 @@ namespace NanoThrottle.Single
             {
                 if (value <= 0)
                     throw new ArgumentOutOfRangeException(nameof(InstanceCount));
-
+                
                 lock (_updateSettingsLock)
                 {
+                    if (value == _instanceCount)
+                        return;
+                    
+                    var oldInstanceCount = _instanceCount;
+                    
                     _instanceCount = value;
-
+                    
                     // Update the rate limit so that it picks up the new instance count
                     SetRateLimitWithinLock(_globalRateLimit);
+
+                    _onInstanceCountChanged?.Invoke(new InstanceCountChangedNotification(oldInstanceCount, value));
                 }
             }
         }

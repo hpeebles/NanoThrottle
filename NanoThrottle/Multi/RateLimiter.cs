@@ -8,6 +8,7 @@ namespace NanoThrottle.Multi
     public class RateLimiter<TK> : IRateLimiter<TK>
     {
         private readonly IDictionary<TK, IRateLimiter> _rateLimiters;
+        private readonly Action<InstanceCountChangedNotification> _onInstanceCountChanged;
         private readonly object _updateSettingsLock = new Object();
         private int _instanceCount;
 
@@ -18,7 +19,8 @@ namespace NanoThrottle.Multi
             IEqualityComparer<TK> comparer = null,
             Action<TK> onSuccess = null,
             Action<TK> onFailure = null,
-            Action<RateLimitChangedNotification<TK>> onRateLimitChanged = null)
+            Action<RateLimitChangedNotification<TK>> onRateLimitChanged = null,
+            Action<InstanceCountChangedNotification> onInstanceCountChanged = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             if (rateLimits == null) throw new ArgumentNullException(nameof(rateLimits));
@@ -35,6 +37,7 @@ namespace NanoThrottle.Multi
                 comparer);
             
             _instanceCount = instanceCount;
+            _onInstanceCountChanged = onInstanceCountChanged;
         }
         
         public string Name { get; }
@@ -59,12 +62,22 @@ namespace NanoThrottle.Multi
             get => _instanceCount;
             set
             {
+                if (value <= 0)
+                    throw new ArgumentOutOfRangeException(nameof(InstanceCount));
+                
                 lock (_updateSettingsLock)
                 {
+                    if (value == _instanceCount)
+                        return;
+                    
+                    var oldInstanceCount = _instanceCount;
+                    
                     foreach (var rateLimiter in _rateLimiters.Values)
                         rateLimiter.InstanceCount = value;
                     
                     _instanceCount = value;
+                    
+                    _onInstanceCountChanged?.Invoke(new InstanceCountChangedNotification(oldInstanceCount, value));
                 }
             }
         }

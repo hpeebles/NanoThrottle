@@ -149,15 +149,28 @@ namespace NanoThrottle.Tests.Multi
 
             rateLimiter.SetRateLimit(1, rateLimit2);
 
-            var expected = new RateLimitChangedNotification<int>(
-                1,
-                rateLimit1.AsLocal(1),
-                rateLimit2.AsLocal(1),
-                rateLimit1,
-                rateLimit2);
+            rateLimitChanges.Should().ContainSingle();
+        }
+        
+        [Fact]
+        public void OnInstanceCountChangedIsSetCorrectly()
+        {
+            var instanceCountChanges = new List<InstanceCountChangedNotification>();
+
+            Action<InstanceCountChangedNotification> onInstanceCountChanged = instanceCountChanges.Add;
             
-            rateLimitChanges.Should().HaveCount(1)
-                .And.BeEquivalentTo(expected);
+            var rateLimiter = RateLimiterFactory
+                .Create("test")
+                .WithRateLimits(new[]
+                {
+                    new KeyValuePair<int, RateLimit>(1, new RateLimit(10, TimeSpan.FromSeconds(1)))
+                })
+                .OnInstanceCountChanged(onInstanceCountChanged)
+                .Build();
+
+            rateLimiter.InstanceCount = 2;
+
+            instanceCountChanges.Should().ContainSingle();
         }
     }
 }
