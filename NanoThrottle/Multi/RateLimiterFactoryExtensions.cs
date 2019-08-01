@@ -16,5 +16,17 @@ namespace NanoThrottle.Multi
                 rateLimitUpdates.Subscribe(kv => rateLimiter.SetRateLimit(kv.Key, kv.Value));
             }
         }
+        
+        public static RateLimiterFactory<TK> WithInstanceCountUpdates<TK>(
+            this RateLimiterFactory<TK> factory,
+            IObservable<int> instanceCountUpdates)
+        {
+            return factory.OnBuild(Subscribe);
+
+            void Subscribe(IRateLimiter<TK> rateLimiter)
+            {
+                instanceCountUpdates.Subscribe(count => rateLimiter.InstanceCount = count);
+            }
+        }
     }
 }

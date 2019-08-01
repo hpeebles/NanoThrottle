@@ -13,10 +13,19 @@ namespace NanoThrottle.Single
 
             void Subscribe(IRateLimiter rateLimiter)
             {
-                rateLimitUpdates
-                    .Do(rateLimiter.SetRateLimit)
-                    .Retry()
-                    .Subscribe();
+                rateLimitUpdates.Subscribe(rateLimiter.SetRateLimit);
+            }
+        }
+        
+        public static RateLimiterFactory WithInstanceCountUpdates(
+            this RateLimiterFactory factory,
+            IObservable<int> instanceCountUpdates)
+        {
+            return factory.OnBuild(Subscribe);
+
+            void Subscribe(IRateLimiter rateLimiter)
+            {
+                instanceCountUpdates.Subscribe(count => rateLimiter.InstanceCount = count);
             }
         }
     }

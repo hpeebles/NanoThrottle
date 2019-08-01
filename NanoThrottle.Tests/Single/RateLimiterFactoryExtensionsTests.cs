@@ -27,5 +27,23 @@ namespace NanoThrottle.Tests.Single
                 rateLimiter.GetRateLimit().Should().Be(rateLimit);
             }
         }
+        
+        [Fact]
+        public void WithInstanceCountUpdatesWorksCorrectly()
+        {
+            var updates = new Subject<int>();
+            
+            var rateLimiter = RateLimiter
+                .WithRateLimit(new RateLimit(100, TimeSpan.FromSeconds(1)))
+                .WithInstanceCountUpdates(updates)
+                .Build();
+
+            for (var count = 2; count < 10; count++)
+            {
+                updates.OnNext(count);
+
+                rateLimiter.InstanceCount.Should().Be(count);
+            }
+        }
     }
 }
