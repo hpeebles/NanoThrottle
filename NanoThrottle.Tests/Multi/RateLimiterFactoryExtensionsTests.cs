@@ -14,8 +14,7 @@ namespace NanoThrottle.Tests.Multi
         {
             var updates = new Subject<KeyValuePair<int, RateLimit>>();
             
-            var rateLimiter = RateLimiterFactory
-                .Create("test")
+            var rateLimiter = RateLimiter
                 .WithRateLimits(new[]
                 {
                     new KeyValuePair<int, RateLimit>(1, new RateLimit(0, TimeSpan.FromSeconds(1)))

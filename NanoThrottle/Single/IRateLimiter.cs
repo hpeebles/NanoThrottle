@@ -2,8 +2,6 @@ namespace NanoThrottle.Single
 {
     public interface IRateLimiter
     {
-        string Name { get; }
-
         RateLimit GetRateLimit(RateLimitType type = RateLimitType.Global);
 
         void SetRateLimit(RateLimit rateLimit);

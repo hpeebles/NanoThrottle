@@ -8,6 +8,11 @@ namespace NanoThrottle.Single
     // All timings are using Stopwatch ticks rather than DateTime ticks
     public class RateLimiter : IRateLimiter
     {
+        public static RateLimiterFactory WithRateLimit(RateLimit rateLimit)
+        {
+            return new RateLimiterFactory(rateLimit);
+        }
+        
         private RateLimit _localRateLimit;
         private RateLimit _globalRateLimit;
         private int _instanceCount;
@@ -26,7 +31,6 @@ namespace NanoThrottle.Single
         private readonly object _updateSettingsLock = new Object();
 
         internal RateLimiter(
-            string name,
             RateLimit rateLimit,
             int instanceCount = 1,
             Action onSuccess = null,
@@ -34,7 +38,6 @@ namespace NanoThrottle.Single
             Action<RateLimitChangedNotification> onRateLimitChanged = null,
             Action<InstanceCountChangedNotification> onInstanceCountChanged = null)
         {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
             _instanceCount = instanceCount;
             _localRateLimit = rateLimit.AsLocal(instanceCount);
             _globalRateLimit = rateLimit.AsGlobal(instanceCount);
@@ -49,8 +52,6 @@ namespace NanoThrottle.Single
             _onInstanceCountChanged = onInstanceCountChanged;
         }
         
-        public string Name { get; }
-
         public RateLimit GetRateLimit(RateLimitType type = RateLimitType.Global)
         {
             return type == RateLimitType.Local

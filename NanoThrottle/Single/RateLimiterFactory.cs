@@ -4,8 +4,7 @@ namespace NanoThrottle.Single
 {
     public class RateLimiterFactory
     {
-        private readonly string _name;
-        private RateLimit _rateLimit;
+        private readonly RateLimit _rateLimit;
         private int _instanceCount = 1;
         private Action _onSuccess;
         private Action _onFailure;
@@ -13,20 +12,9 @@ namespace NanoThrottle.Single
         private Action<InstanceCountChangedNotification> _onInstanceCountChanged;
         private Action<RateLimiter> _onBuild;
 
-        private RateLimiterFactory(string name)
-        {
-            _name = name;
-        }
-        
-        public static RateLimiterFactory Create(string name)
-        {
-            return new RateLimiterFactory(name);
-        }
-
-        public RateLimiterFactory WithRateLimit(RateLimit rateLimit)
+        internal RateLimiterFactory(RateLimit rateLimit)
         {
             _rateLimit = rateLimit;
-            return this;
         }
         
         public RateLimiterFactory WithInstanceCount(int instanceCount)
@@ -71,7 +59,6 @@ namespace NanoThrottle.Single
         public IRateLimiter Build()
         {
             var rateLimiter = new RateLimiter(
-                _name,
                 _rateLimit,
                 _instanceCount,
                 _onSuccess,

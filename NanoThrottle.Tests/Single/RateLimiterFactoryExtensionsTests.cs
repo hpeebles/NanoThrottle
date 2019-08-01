@@ -13,8 +13,7 @@ namespace NanoThrottle.Tests.Single
         {
             var updates = new Subject<RateLimit>();
             
-            var rateLimiter = RateLimiterFactory
-                .Create("test")
+            var rateLimiter = RateLimiter
                 .WithRateLimit(new RateLimit(0, TimeSpan.FromSeconds(1)))
                 .WithRateLimitUpdates(updates)
                 .Build();

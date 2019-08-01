@@ -5,6 +5,14 @@ using NanoThrottle.Single;
 
 namespace NanoThrottle.Multi
 {
+    public static class RateLimiter
+    {
+        public static RateLimiterFactory<TK> WithRateLimits<TK>(IEnumerable<KeyValuePair<TK, RateLimit>> rateLimits)
+        {
+            return new RateLimiterFactory<TK>(rateLimits);
+        }
+    }
+    
     public class RateLimiter<TK> : IRateLimiter<TK>
     {
         private readonly IDictionary<TK, IRateLimiter> _rateLimiters;
@@ -13,7 +21,6 @@ namespace NanoThrottle.Multi
         private int _instanceCount;
 
         internal RateLimiter(
-            string name,
             IEnumerable<KeyValuePair<TK, RateLimit>> rateLimits,
             int instanceCount = 1,
             IEqualityComparer<TK> comparer = null,
@@ -22,13 +29,11 @@ namespace NanoThrottle.Multi
             Action<RateLimitChangedNotification<TK>> onRateLimitChanged = null,
             Action<InstanceCountChangedNotification> onInstanceCountChanged = null)
         {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
             if (rateLimits == null) throw new ArgumentNullException(nameof(rateLimits));
             
             _rateLimiters = rateLimits.ToDictionary(
                 kv => kv.Key,
-                kv => (IRateLimiter)new RateLimiter(
-                    $"{name}_{kv.Key}",
+                kv => (IRateLimiter)new Single.RateLimiter(
                     kv.Value,
                     instanceCount,
                     ConvertAction(onSuccess, kv.Key),
@@ -40,8 +45,6 @@ namespace NanoThrottle.Multi
             _onInstanceCountChanged = onInstanceCountChanged;
         }
         
-        public string Name { get; }
-
         public bool CanExecute(TK key, int count = 1)
         {
             return GetRateLimiterSingle(key).CanExecute(count);

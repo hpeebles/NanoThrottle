@@ -9,25 +9,11 @@ namespace NanoThrottle.Tests.Single
     public class RateLimiterFactoryTests
     {
         [Fact]
-        public void NameIsSetCorrectly()
-        {
-            var name = Guid.NewGuid().ToString();
-
-            var rateLimiter = RateLimiterFactory
-                .Create(name)
-                .WithRateLimit(new RateLimit(1, TimeSpan.FromSeconds(1)))
-                .Build();
-
-            rateLimiter.Name.Should().Be(name);
-        }
-
-        [Fact]
         public void RateLimitsAreSetCorrectly()
         {
             var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
 
-            var rateLimiter = RateLimiterFactory
-                .Create("test")
+            var rateLimiter = RateLimiter
                 .WithRateLimit(rateLimit)
                 .Build();
             
@@ -40,8 +26,7 @@ namespace NanoThrottle.Tests.Single
         [InlineData(10)]
         public void InstanceCountIsSetCorrectly(int instanceCount)
         {
-            var rateLimiter = RateLimiterFactory
-                .Create("test")
+            var rateLimiter = RateLimiter
                 .WithRateLimit(new RateLimit(1, TimeSpan.FromSeconds(1)))
                 .WithInstanceCount(instanceCount)
                 .Build();
@@ -56,8 +41,7 @@ namespace NanoThrottle.Tests.Single
 
             Action onSuccess = () => successCount++;
             
-            var rateLimiter = RateLimiterFactory
-                .Create("test")
+            var rateLimiter = RateLimiter
                 .WithRateLimit(new RateLimit(1, TimeSpan.FromSeconds(1)))
                 .OnSuccess(onSuccess)
                 .Build();
@@ -74,8 +58,7 @@ namespace NanoThrottle.Tests.Single
 
             Action onfailure = () => failureCount++;
             
-            var rateLimiter = RateLimiterFactory
-                .Create("test")
+            var rateLimiter = RateLimiter
                 .WithRateLimit(new RateLimit(0, TimeSpan.FromSeconds(1)))
                 .OnFailure(onfailure)
                 .Build();
@@ -95,8 +78,7 @@ namespace NanoThrottle.Tests.Single
             var rateLimit1 = new RateLimit(1, TimeSpan.FromSeconds(1));
             var rateLimit2 = new RateLimit(2, TimeSpan.FromMinutes(1));
 
-            var rateLimiter = RateLimiterFactory
-                .Create("test")
+            var rateLimiter = RateLimiter
                 .WithRateLimit(rateLimit1)
                 .OnRateLimitChanged(onRateLimitChanged)
                 .Build();
@@ -113,8 +95,7 @@ namespace NanoThrottle.Tests.Single
 
             Action<InstanceCountChangedNotification> onInstanceCountChanged = instanceCountChanges.Add;
             
-            var rateLimiter = RateLimiterFactory
-                .Create("test")
+            var rateLimiter = RateLimiter
                 .WithRateLimit(new RateLimit(10, TimeSpan.FromSeconds(1)))
                 .OnInstanceCountChanged(onInstanceCountChanged)
                 .Build();

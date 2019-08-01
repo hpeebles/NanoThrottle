@@ -8,23 +8,10 @@ namespace NanoThrottle.Tests.Multi
 {
     public class RateLimiterTests
     {
-        [Theory]
-        [InlineData("123")]
-        [InlineData("abc")]
-        public void NameSetCorrectly(string name)
-        {
-            var rateLimiter = new RateLimiter<int>(name, new[]
-            {
-                new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1)))
-            });
-
-            rateLimiter.Name.Should().Be(name);
-        }
-        
         [Fact]
         public void KeepsRateLimitersSeparate()
         {
-            var rateLimiter = new RateLimiter<int>("test", new[]
+            var rateLimiter = new RateLimiter<int>(new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1))),
                 new KeyValuePair<int, RateLimit>(2, new RateLimit(1, TimeSpan.FromSeconds(1)))
@@ -43,7 +30,7 @@ namespace NanoThrottle.Tests.Multi
         [InlineData(100)]
         public void RequestingHigherCountUsesUpMoreTokens(int count)
         {
-            var rateLimiter = new RateLimiter<int>("test", new[]
+            var rateLimiter = new RateLimiter<int>(new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, new RateLimit(1000, TimeSpan.MaxValue))
             });
@@ -57,7 +44,7 @@ namespace NanoThrottle.Tests.Multi
         [Fact]
         public void ThrowsIfKeyNotFound()
         {
-            var rateLimiter = new RateLimiter<int>("test", new[]
+            var rateLimiter = new RateLimiter<int>(new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1)))
             });
@@ -74,7 +61,7 @@ namespace NanoThrottle.Tests.Multi
         {
             var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
             
-            var rateLimiter = new RateLimiter<int>("test", new[]
+            var rateLimiter = new RateLimiter<int>(new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, rateLimit)
             });
@@ -87,7 +74,7 @@ namespace NanoThrottle.Tests.Multi
         {
             var rateLimit = new RateLimit(1, TimeSpan.FromSeconds(1));
             
-            var rateLimiter = new RateLimiter<int>("test", new[]
+            var rateLimiter = new RateLimiter<int>(new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, rateLimit)
             });
@@ -105,7 +92,7 @@ namespace NanoThrottle.Tests.Multi
         [InlineData(10)]
         public void CanGetInstanceCount(int instanceCount)
         {
-            var rateLimiter = new RateLimiter<int>("test", new[]
+            var rateLimiter = new RateLimiter<int>(new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1)))
             }, instanceCount);
@@ -116,7 +103,7 @@ namespace NanoThrottle.Tests.Multi
         [Fact]
         public void CanSetInstanceCount()
         {
-            var rateLimiter = new RateLimiter<int>("test", new[]
+            var rateLimiter = new RateLimiter<int>(new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1)))
             });
@@ -135,7 +122,7 @@ namespace NanoThrottle.Tests.Multi
 
             Action<int> onSuccess = successList.Add;
             
-            var rateLimiter = new RateLimiter<int>("test", new[]
+            var rateLimiter = new RateLimiter<int>(new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1))),
                 new KeyValuePair<int, RateLimit>(2, new RateLimit(2, TimeSpan.FromSeconds(1)))
@@ -169,7 +156,7 @@ namespace NanoThrottle.Tests.Multi
 
             Action<int> onFailure = failureList.Add;
             
-            var rateLimiter = new RateLimiter<int>("test", new[]
+            var rateLimiter = new RateLimiter<int>(new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1))),
                 new KeyValuePair<int, RateLimit>(2, new RateLimit(2, TimeSpan.FromSeconds(1)))
@@ -206,7 +193,7 @@ namespace NanoThrottle.Tests.Multi
             var rateLimit1 = new RateLimit(1, TimeSpan.FromSeconds(1));
             var rateLimit2 = new RateLimit(2, TimeSpan.FromMinutes(1));
             
-            var rateLimiter = new RateLimiter<int>("test", new[]
+            var rateLimiter = new RateLimiter<int>(new[]
             {    
                 new KeyValuePair<int, RateLimit>(1, rateLimit1),
                 new KeyValuePair<int, RateLimit>(2, rateLimit2)
@@ -248,7 +235,7 @@ namespace NanoThrottle.Tests.Multi
 
             Action<InstanceCountChangedNotification> onInstanceCountChanged = instanceCountChanges.Add;
 
-            var rateLimiter = new RateLimiter<int>("test", new[]
+            var rateLimiter = new RateLimiter<int>(new[]
             {
                 new KeyValuePair<int, RateLimit>(1, new RateLimit(10, TimeSpan.FromSeconds(1)))
             }, onInstanceCountChanged: onInstanceCountChanged);
