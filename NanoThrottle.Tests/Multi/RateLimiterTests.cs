@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using FluentAssertions;
 using NanoThrottle.Multi;
 using Xunit;
@@ -256,6 +259,155 @@ namespace NanoThrottle.Tests.Multi
                         .And.HaveElementAt(i - 2, expected);
                 }
             }
+        }
+
+        [Fact]
+        public void WithRateLimitUpdatesWorksCorrectly()
+        {
+            var updates = new Subject<IEnumerable<KeyValuePair<int, RateLimit>>>();
+
+            var rateLimiter = RateLimiter
+                .WithRateLimits(updates)
+                .Build();
+
+            for (var i = 0; i < 10; i++)
+            {
+                var rateLimit = new RateLimit(i, TimeSpan.FromSeconds(1));
+
+                updates.OnNext(new[] { new KeyValuePair<int, RateLimit>(1, rateLimit) });
+
+                rateLimiter.GetRateLimit(1).Should().Be(rateLimit);
+            }
+        }
+
+        [Fact]
+        public void WithInstanceCountUpdatesWorksCorrectly()
+        {
+            var updates = new Subject<int>();
+
+            var rateLimiter = RateLimiter
+                .WithRateLimits(new[]
+                {
+                    new KeyValuePair<int, RateLimit>(1, new RateLimit(100, TimeSpan.FromSeconds(1)))
+                })
+                .WithInstanceCount(updates)
+                .Build();
+
+            for (var count = 2; count < 10; count++)
+            {
+                updates.OnNext(count);
+
+                rateLimiter.InstanceCount.Should().Be(count);
+            }
+        }
+        
+        [Fact]
+        public void ThrowsIfNotInitialized()
+        {
+            var updates = new Subject<IEnumerable<KeyValuePair<int, RateLimit>>>();
+
+            var rateLimiter = RateLimiter
+                .WithRateLimits(updates)
+                .Build();
+
+            Action action = () => rateLimiter.CanExecute(1);
+
+            action.Should().Throw<InvalidOperationException>();
+        }
+        
+        [Fact]
+        public void ThrowsIfDisposed()
+        {
+            var updates = new Subject<IEnumerable<KeyValuePair<int, RateLimit>>>();
+
+            var rateLimiter = RateLimiter
+                .WithRateLimits(updates)
+                .Build();
+
+            rateLimiter.Dispose();
+            
+            Action action = () => rateLimiter.CanExecute(1);
+
+            action.Should().Throw<ObjectDisposedException>();
+        }
+
+        [Fact]
+        public void SubscribesToUpdatesImmediately()
+        {
+            var rateLimitUpdates = new Subject<IEnumerable<KeyValuePair<int, RateLimit>>>();
+            var instanceCountUpdates = new Subject<int>();
+            
+            var rateLimiter = RateLimiter
+                .WithRateLimits(rateLimitUpdates)
+                .WithInstanceCount(instanceCountUpdates)
+                .Build();
+
+            rateLimitUpdates.HasObservers.Should().BeTrue();
+            instanceCountUpdates.HasObservers.Should().BeTrue();
+        }
+        
+        [Fact]
+        public void UnsubscribesFromUpdatesOnDispose()
+        {
+            var rateLimitUpdates = new Subject<IEnumerable<KeyValuePair<int, RateLimit>>>();
+            var instanceCountUpdates = new Subject<int>();
+            
+            var rateLimiter = RateLimiter
+                .WithRateLimits(rateLimitUpdates)
+                .WithInstanceCount(instanceCountUpdates)
+                .Build();
+
+            rateLimitUpdates.HasObservers.Should().BeTrue();
+            instanceCountUpdates.HasObservers.Should().BeTrue();
+            
+            rateLimiter.Dispose();
+            
+            rateLimitUpdates.HasObservers.Should().BeFalse();
+            instanceCountUpdates.HasObservers.Should().BeFalse();
+        }
+
+        [Fact]
+        public void StateIsUpdatedCorrectly()
+        {
+            var updates = new Subject<IEnumerable<KeyValuePair<int, RateLimit>>>();
+
+            var rateLimiter = RateLimiter
+                .WithRateLimits(updates)
+                .Build();
+
+            rateLimiter.State.Should().Be(RateLimiterState.PendingInitialization);
+            
+            updates.OnNext(new[] { new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1))) });
+
+            rateLimiter.State.Should().Be(RateLimiterState.Ready);
+            
+            rateLimiter.Dispose();
+
+            rateLimiter.State.Should().Be(RateLimiterState.Disposed);
+        }
+        
+        [Fact]
+        public void WaitUntilInitializedWorksCorrectly()
+        {
+            var updates = new Subject<IEnumerable<KeyValuePair<int, RateLimit>>>();
+            
+            var rateLimiter = RateLimiter
+                .WithRateLimits(updates.Delay(TimeSpan.FromMilliseconds(500)))
+                .Build();
+
+            Action action = () => rateLimiter.CanExecute(1);
+
+            action.Should().Throw<InvalidOperationException>();
+
+            updates.OnNext(new[] { new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1))) });
+
+            var timer = Stopwatch.StartNew();
+            
+            rateLimiter.WaitUntilInitialized(TimeSpan.FromMinutes(1));
+            
+            timer.Stop();
+
+            timer.Elapsed.Should().BeCloseTo(TimeSpan.FromMilliseconds(500), 100);
         }
     }
 }

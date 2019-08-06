@@ -1,20 +1,21 @@
 using System;
+using System.Reactive.Linq;
 
 namespace NanoThrottle.Single
 {
     public class RateLimiterFactory
     {
-        private readonly RateLimit _rateLimit;
-        private int _instanceCount = 1;
+        private readonly IObservable<RateLimit> _rateLimitUpdates;
+        private IObservable<int> _instanceCountUpdates;
         private Action _onSuccess;
         private Action _onFailure;
         private Action<RateLimitChangedNotification> _onRateLimitChanged;
         private Action<InstanceCountChangedNotification> _onInstanceCountChanged;
         private Action<RateLimiter> _onBuild;
 
-        internal RateLimiterFactory(RateLimit rateLimit)
+        internal RateLimiterFactory(IObservable<RateLimit> rateLimitUpdates)
         {
-            _rateLimit = rateLimit;
+            _rateLimitUpdates = rateLimitUpdates;
         }
         
         public RateLimiterFactory WithInstanceCount(int instanceCount)
@@ -22,7 +23,13 @@ namespace NanoThrottle.Single
             if (instanceCount <= 0)
                 throw new ArgumentOutOfRangeException(nameof(instanceCount));
             
-            _instanceCount = instanceCount;
+            _instanceCountUpdates = Observable.Return(instanceCount);
+            return this;
+        }
+        
+        public RateLimiterFactory WithInstanceCount(IObservable<int> instanceCountUpdates)
+        {
+            _instanceCountUpdates = instanceCountUpdates ?? throw new ArgumentNullException(nameof(instanceCountUpdates));
             return this;
         }
 
@@ -59,8 +66,8 @@ namespace NanoThrottle.Single
         public IRateLimiter Build()
         {
             var rateLimiter = new RateLimiter(
-                _rateLimit,
-                _instanceCount,
+                _rateLimitUpdates,
+                _instanceCountUpdates,
                 _onSuccess,
                 _onFailure,
                 _onRateLimitChanged,

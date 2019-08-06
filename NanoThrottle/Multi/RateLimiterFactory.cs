@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
+using System.Threading.Tasks;
 
 namespace NanoThrottle.Multi
 {
     public class RateLimiterFactory<TK>
     {
-        private readonly IEnumerable<KeyValuePair<TK, RateLimit>> _rateLimits;
-        private int _instanceCount = 1;
+        private readonly IObservable<IEnumerable<KeyValuePair<TK, RateLimit>>> _rateLimitUpdates;
+        private IObservable<int> _instanceCountUpdates;
         private IEqualityComparer<TK> _comparer;
         private Action<TK> _onSuccess;
         private Action<TK> _onFailure;
@@ -14,9 +17,9 @@ namespace NanoThrottle.Multi
         private Action<InstanceCountChangedNotification> _onInstanceCountChanged;
         private Action<RateLimiter<TK>> _onBuild;
 
-        internal RateLimiterFactory(IEnumerable<KeyValuePair<TK, RateLimit>> rateLimits)
+        internal RateLimiterFactory(IObservable<IEnumerable<KeyValuePair<TK, RateLimit>>> rateLimitUpdates)
         {
-            _rateLimits = rateLimits;
+            _rateLimitUpdates = rateLimitUpdates;
         }
 
         public RateLimiterFactory<TK> WithInstanceCount(int instanceCount)
@@ -24,7 +27,12 @@ namespace NanoThrottle.Multi
             if (instanceCount <= 0)
                 throw new ArgumentOutOfRangeException(nameof(instanceCount));
             
-            _instanceCount = instanceCount;
+            return WithInstanceCount(Observable.Return(instanceCount));
+        }
+        
+        public RateLimiterFactory<TK> WithInstanceCount(IObservable<int> instanceCountUpdates)
+        {
+            _instanceCountUpdates = instanceCountUpdates ?? throw new ArgumentNullException(nameof(instanceCountUpdates));
             return this;
         }
 
@@ -67,8 +75,8 @@ namespace NanoThrottle.Multi
         public IRateLimiter<TK> Build()
         {
             var rateLimiter = new RateLimiter<TK>(
-                _rateLimits,
-                _instanceCount,
+                _rateLimitUpdates,
+                _instanceCountUpdates,
                 _comparer,
                 _onSuccess,
                 _onFailure,
