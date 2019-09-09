@@ -24,6 +24,12 @@ namespace NanoThrottle.Redis
 
                     subscriber.Subscribe(key);
 
+                    token.Register(() =>
+                    {
+                        subscriber.Unsubscribe(key);
+                        connectionMultiplexer.Dispose();
+                    });
+                    
                     while (!token.IsCancellationRequested)
                     {
                         var instanceCountTasks = connectionMultiplexer
@@ -43,7 +49,12 @@ namespace NanoThrottle.Redis
 
                         x.OnNext(instanceCount);
 
-                        await Task.Delay(refreshInterval, token);
+                        try
+                        {
+                            await Task.Delay(refreshInterval, token);
+                        }
+                        catch (TaskCanceledException)
+                        { }
                     }
                 })
                 .DistinctUntilChanged()
