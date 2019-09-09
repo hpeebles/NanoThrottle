@@ -11,6 +11,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NanoThrottle.Redis\NanoThrottle.Redis.csproj" />
     <ProjectReference Include="..\NanoThrottle\NanoThrottle.csproj" />
   </ItemGroup>
 </Project>
