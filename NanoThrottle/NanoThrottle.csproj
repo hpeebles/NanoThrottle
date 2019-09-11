@@ -1,6 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <PackageId>NanoThrottle</PackageId>
+    <PackageTags>Throttle;RateLimit;Distributed;</PackageTags>
+    <Description>High performance, non-locking, non-allocating rate limiter which adds less than 100 nano seconds of latency in the worst case</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Reactive" Version="4.1.5" />

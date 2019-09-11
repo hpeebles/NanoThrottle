@@ -289,7 +289,11 @@ namespace NanoThrottle.Single
 
         private static long GetIntervalBetweenEachTokenRefresh(RateLimit rateLimit)
         {
-            return (long)(Stopwatch.Frequency * rateLimit.Interval.TotalSeconds / rateLimit.Count);
+            var ticks = (long)(Stopwatch.Frequency * rateLimit.Interval.TotalSeconds / rateLimit.Count);
+
+            return ticks > 0
+                ? ticks
+                : 1;
         }
     }
 }

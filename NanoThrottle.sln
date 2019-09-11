@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NanoThrottle.Tests", "NanoT
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NanoThrottle.Redis", "NanoThrottle.Redis\NanoThrottle.Redis.csproj", "{C46FB8DA-26F1-496A-B324-3E57A648E6DB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NanoThrottle.Benchmarks", "NanoThrottle.Benchmarks\NanoThrottle.Benchmarks.csproj", "{1FAD373C-6091-4EA9-B9FE-458167C43A2B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{C46FB8DA-26F1-496A-B324-3E57A648E6DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C46FB8DA-26F1-496A-B324-3E57A648E6DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C46FB8DA-26F1-496A-B324-3E57A648E6DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FAD373C-6091-4EA9-B9FE-458167C43A2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FAD373C-6091-4EA9-B9FE-458167C43A2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FAD373C-6091-4EA9-B9FE-458167C43A2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FAD373C-6091-4EA9-B9FE-458167C43A2B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

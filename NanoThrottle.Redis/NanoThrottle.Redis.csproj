@@ -1,6 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <PackageId>NanoThrottle.Redis</PackageId>
+    <PackageTags>Throttle;RateLimit;Distributed;Redis;</PackageTags>
+    <Description>Extends NanoThrottle to work with distributed systems by using Redis to determine the number of instances</Description>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\NanoThrottle\NanoThrottle.csproj" />
