@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 
 namespace NanoThrottle.Multi
 {
@@ -7,6 +8,8 @@ namespace NanoThrottle.Multi
         RateLimiterState State { get; }
         
         void WaitUntilInitialized(TimeSpan timeout);
+
+        void WaitUntilInitialized(CancellationToken token);
         
         bool CanExecute(TK key, int count = 1);
 

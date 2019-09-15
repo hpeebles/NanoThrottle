@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 using FluentAssertions;
 using NanoThrottle.Multi;
 using Xunit;
@@ -387,7 +388,7 @@ namespace NanoThrottle.Tests.Multi
         }
         
         [Fact]
-        public void WaitUntilInitializedWorksCorrectly()
+        public void WaitUntilInitializedWithTimeoutWorksCorrectly()
         {
             var updates = new Subject<IEnumerable<KeyValuePair<int, RateLimit>>>();
             
@@ -408,6 +409,42 @@ namespace NanoThrottle.Tests.Multi
             timer.Stop();
 
             timer.Elapsed.Should().BeCloseTo(TimeSpan.FromMilliseconds(500), 100);
+        }
+        
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void WaitUntilInitializedWithCancellationTokenWorksCorrectly(bool cancelBeforeComplete)
+        {
+            var updates = new Subject<IEnumerable<KeyValuePair<int, RateLimit>>>();
+            
+            var rateLimiter = RateLimiter
+                .WithRateLimits(updates.Delay(TimeSpan.FromMilliseconds(500)))
+                .Build();
+
+            Action action1 = () => rateLimiter.CanExecute(1);
+            
+            action1.Should().Throw<InvalidOperationException>();
+
+            var cancellationTokenSource = cancelBeforeComplete
+                ? new CancellationTokenSource(TimeSpan.FromMilliseconds(100))
+                : new CancellationTokenSource();
+            
+            Action action2 = () => rateLimiter.WaitUntilInitialized(cancellationTokenSource.Token);
+
+            updates.OnNext(new[] { new KeyValuePair<int, RateLimit>(1, new RateLimit(1, TimeSpan.FromSeconds(1))) });
+
+            var timer = Stopwatch.StartNew();
+
+            if (cancelBeforeComplete)
+            {
+                action2.Should().ThrowExactly<OperationCanceledException>();
+            }
+            else
+            {
+                action2.Should().NotThrow();
+                timer.Elapsed.Should().BeCloseTo(TimeSpan.FromMilliseconds(500), 100);
+            }
         }
     }
 }

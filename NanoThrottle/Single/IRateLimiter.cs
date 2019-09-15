@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 
 namespace NanoThrottle.Single
 {
@@ -7,6 +8,8 @@ namespace NanoThrottle.Single
         RateLimiterState State { get; }
         
         void WaitUntilInitialized(TimeSpan timeout);
+        
+        void WaitUntilInitialized(CancellationToken token);
         
         RateLimit GetRateLimit(RateLimitType type = RateLimitType.Global);
 

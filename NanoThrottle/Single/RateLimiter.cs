@@ -90,6 +90,16 @@ namespace NanoThrottle.Single
                 throw new Exception($"Initialization failed to complete in {timeout.TotalSeconds:#.##} seconds");
         }
         
+        public void WaitUntilInitialized(CancellationToken token)
+        {
+            if (_state == RateLimiterState.Disposed)
+                throw new ObjectDisposedException(nameof(RateLimiter));
+
+            var firstToCompleteIndex = WaitHandle.WaitAny(new[] { _initializationWaitHandle, token.WaitHandle });
+            if (firstToCompleteIndex != 0)
+                throw new OperationCanceledException();
+        }
+        
         public RateLimit GetRateLimit(RateLimitType type = RateLimitType.Global)
         {
             return type == RateLimitType.Local
