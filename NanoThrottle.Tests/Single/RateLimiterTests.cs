@@ -14,8 +14,8 @@ namespace NanoThrottle.Tests.Single
     {
         [Theory]
         [InlineData(1)]
+        [InlineData(5)]
         [InlineData(10)]
-        [InlineData(100)]
         public void TokensReplenishAtCorrectRate(int requestsPerSecond)
         {
             var rateLimit = new RateLimit(requestsPerSecond, TimeSpan.FromSeconds(1));

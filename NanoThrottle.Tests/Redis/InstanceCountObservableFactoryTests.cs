@@ -12,13 +12,15 @@ namespace NanoThrottle.Tests.Redis
         [Fact]
         public void InstanceCountIsIncrementedWhenSubscribersConnect()
         {
-            var counts = new int[10];
+            const int maxSubscriptionsCount = 5;
+            
+            var counts = new int[maxSubscriptionsCount];
 
             var key = Guid.NewGuid().ToString();
             var redisConfig = new RedisConfiguration(TestConnectionString.Value);
 
             CountdownEvent countdown;
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < maxSubscriptionsCount; i++)
             {
                 countdown = new CountdownEvent(i + 1);
                 var index = i;
@@ -40,14 +42,16 @@ namespace NanoThrottle.Tests.Redis
         [Fact]
         public void InstanceCountIsDecrementedWhenSubscribersDisconnect()
         {
+            const int maxSubscriptionsCount = 5;
+            
             var subscriptions = new List<IDisposable>();
-            var counts = new int[10];
+            var counts = new int[maxSubscriptionsCount];
 
             var key = Guid.NewGuid().ToString();
             var redisConfig = new RedisConfiguration(TestConnectionString.Value);
 
             CountdownEvent countdown;
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < maxSubscriptionsCount; i++)
             {
                 countdown = new CountdownEvent(i + 1);
                 
@@ -63,22 +67,22 @@ namespace NanoThrottle.Tests.Redis
                 Wait(countdown);
             }
             
-            for (var i = 0; i < 9; i++)
+            for (var i = 0; i < maxSubscriptionsCount - 1; i++)
             {
-                countdown = new CountdownEvent(9 - i);
+                countdown = new CountdownEvent(maxSubscriptionsCount - 1 - i);
                 
                 subscriptions[i].Dispose();
 
                 Wait(countdown);
 
-                for (var j = i + 1; j < 9; j++)
-                    counts[j].Should().Be(9 - i);
+                for (var j = i + 1; j < maxSubscriptionsCount - 1; j++)
+                    counts[j].Should().Be(maxSubscriptionsCount - 1 - i);
             }
         }
 
         private static void Wait(CountdownEvent countdown)
         {
-            if (!countdown.Wait(TimeSpan.FromSeconds(10)))
+            if (!countdown.Wait(TimeSpan.FromSeconds(5)))
                 throw new Exception($"Failed to wait for all events to occur. Initial count:{countdown.InitialCount}. CurrentCount:{countdown.CurrentCount}");
         }
     }
